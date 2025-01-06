@@ -49,58 +49,72 @@ How can I assist you today?
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        user_message = update.message.text
+        # Check if message is from a group
+        is_group = update.message.chat.type in ['group', 'supergroup']
+        message_text = update.message.text
         
-        # Search relevant information in the knowledge base
-        relevant_info = knowledge_base.query_knowledge(user_message)
+        # In groups, only respond when mentioned
+        if is_group:
+            bot_username = context.bot.username
+            mentions = [f'@{bot_username}', bot_username]
+            
+            if not any(mention in message_text for mention in mentions):
+                return
+                
+            # Clean up the mention from the message
+            for mention in mentions:
+                message_text = message_text.replace(mention, '').strip()
+            
+            if not message_text:
+                return
+        
+        # Query the knowledge base
+        relevant_info = knowledge_base.query_knowledge(message_text)
         context_text = "\n".join([doc.page_content for doc in relevant_info])
         
-        # Get response from the agent with the context
+        # Get response from agent
         response = client.run(
             agent=dexkit_agent,
             messages=[
                 {"role": "system", "content": f"Relevant context from DexKit documentation and tutorials:\n{context_text}"},
-                {"role": "user", "content": user_message}
+                {"role": "user", "content": message_text}
             ],
             stream=False
         )
         
-        await update.message.reply_text(response.messages[-1]["content"])
+        # Send response
+        await update.message.reply_text(
+            response.messages[-1]["content"],
+            reply_to_message_id=update.message.message_id
+        )
         
     except Exception as e:
-        error_message = "I apologize, but I encountered an error. Please try again or contact DexKit support if the issue persists."
+        error_message = "I apologize, but I encountered an error. Please try again."
         logging.error(f"Error: {str(e)}")
         await update.message.reply_text(error_message)
 
-def run_bot():
-    """Main function to run the bot"""
-    # Configure event policy for Windows
-    if os.name == 'nt':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-    # Initialize the knowledge base
-    try:
-        knowledge_base.db = Chroma(
-            persist_directory="./knowledge_base",
-            embedding_function=knowledge_base.embeddings
-        )
-    except Exception as e:
-        print(f"Error loading knowledge base: {e}")
-        return
-
-    # Configure and run the bot
+def main():
+    """Initialize and run the bot"""
+    # Initialize knowledge base
+    knowledge_base.db = Chroma(
+        persist_directory="./knowledge_base",
+        embedding_function=knowledge_base.embeddings
+    )
+    
+    # Create application instance
     app = Application.builder().token(os.getenv('TELEGRAM_BOT_TOKEN')).build()
     
     # Add handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
+    
+    # Start the bot
     print("Starting bot...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     try:
-        run_bot()
+        main()
     except KeyboardInterrupt:
         print("\nBot stopped by user")
     except Exception as e:
