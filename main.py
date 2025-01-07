@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from swarm import Swarm, Agent
 from knowledge.data_ingestion import DexKitKnowledgeBase
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import Chroma
 from knowledge.documentation_manager import DocumentationManager
 
 # Logging configuration
@@ -78,7 +78,8 @@ How can I assist you today?
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        # Check if message is for the bot
+        # Check if message is in private chat or for the bot in groups
+        is_private = update.message.chat.type == 'private'
         is_bot_mentioned = bool(update.message.entities and 
             any(entity.type == 'mention' and 
                 context.bot.username in update.message.text[entity.offset:entity.offset + entity.length] 
@@ -86,8 +87,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_reply_to_bot = bool(update.message.reply_to_message and 
             update.message.reply_to_message.from_user.id == context.bot.id)
         
-        # Only process if bot is mentioned or is a reply to bot
-        if not (is_bot_mentioned or is_reply_to_bot):
+        # Process if private chat OR bot is mentioned/replied to in groups
+        if not (is_private or is_bot_mentioned or is_reply_to_bot):
             return
             
         chat_id = update.message.chat_id
@@ -114,7 +115,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             {"role": "system", "content": f"{dexkit_agent.instructions}\n\nContext:\n{context_text}"}
         ] + active_conversations[chat_id][-5:]
         
-        # Keep typing until response is ready
         typing_task = asyncio.create_task(keep_typing(context.bot, chat_id))
         
         try:
@@ -131,10 +131,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             })
             
         finally:
-            # Cancel typing only after we have the response
+            # Cancel typing before sending message
             typing_task.cancel()
+            await asyncio.sleep(0.1)  # Small delay to ensure typing is cancelled
         
-        # Send response immediately after canceling typing
+        # Send message after typing is cancelled
         await update.message.reply_text(
             bot_response,
             reply_to_message_id=update.message.message_id,
