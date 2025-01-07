@@ -2,6 +2,7 @@ import json
 import os
 from typing import List, Dict
 from dataclasses import dataclass
+import requests
 
 @dataclass
 class DocReference:
@@ -59,12 +60,23 @@ class DocumentationManager:
         relevant_docs = []
         query_terms = set(query.lower().split())
         
+        # Prioritize terms related to tokens/contracts
+        priority_terms = {'token', 'contract', 'erc20', 'deploy', 'create'}
+        has_priority = bool(query_terms & priority_terms)
+        
+        scored_docs = []
         for key, doc in self.docs_map.items():
             key_terms = set(key.lower().split('_'))
-            if query_terms & key_terms:  # If there's any intersection
-                relevant_docs.append(doc)
-                if len(relevant_docs) >= max_results:
-                    break
+            intersection = query_terms & key_terms
+            if intersection:
+                # Higher weight if it contains priority terms
+                score = len(intersection) * (2 if has_priority and 
+                    any(term in key.lower() for term in priority_terms) else 1)
+                scored_docs.append((score, doc))
+        
+        # Sort by score
+        scored_docs.sort(reverse=True, key=lambda x: x[0])
+        relevant_docs = [doc for _, doc in scored_docs[:max_results]]
         
         return relevant_docs
 
@@ -72,3 +84,15 @@ class DocumentationManager:
         """Get URL by key"""
         doc = self.docs_map.get(key)
         return doc.url if doc else None 
+
+    def validate_url(self, url: str) -> bool:
+        try:
+            response = requests.head(url)
+            return response.status_code == 200
+        except:
+            return False 
+
+    def reload_configuration(self):
+        """Reload configuration without restarting the bot"""
+        self.load_documentation()
+        self.create_knowledge_base() 

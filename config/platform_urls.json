@@ -25,6 +25,7 @@
       "admin": {
         "create": "https://dexappbuilder.dexkit.com/admin/create",
         "dashboard": "https://dexappbuilder.dexkit.com/admin",
+        "templates": "https://docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates",
         "quick_builders": {
           "swap": "https://dexappbuilder.dexkit.com/admin/quick-builder/swap",
           "exchange": "https://dexappbuilder.dexkit.com/admin/quick-builder/exchange",
@@ -32,24 +33,6 @@
           "nft_store": "https://dexappbuilder.dexkit.com/admin/quick-builder/nft-store"
         }
       }
-    },
-    "dexgenerator": {
-      "home": "https://dexappbuilder.dexkit.com/dexgenerator",
-      "forms": {
-        "create_contract": "https://dexappbuilder.dexkit.com/forms/contracts/create",
-        "list_contracts": "https://dexappbuilder.dexkit.com/forms/contracts/list",
-        "create_form": "https://dexappbuilder.dexkit.com/forms/create",
-        "manage_forms": "https://dexappbuilder.dexkit.com/forms/manage"
-      }
-    },
-    "landing_pages": {
-      "dexappbuilder": "https://dexkit.com/dexappbuilder",
-      "dexswap": "https://dexkit.com/dexswap",
-      "dexnftmarket": "https://dexkit.com/dexnftmarket",
-      "dexnftstore": "https://dexkit.com/dexnftstore",
-      "dexgenerator": "https://dexkit.com/dexgenerator",
-      "dexwallet": "https://dexkit.com/dexwallet",
-      "dexexchangepro": "https://dexkit.com/dexexchangepro"
     }
   },
   "token": {
