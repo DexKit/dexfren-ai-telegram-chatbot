@@ -1,0 +1,88 @@
+{
+  "dexappbuilder": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexappbuilder",
+    "sections": {
+      "main": "https://docs.dexkit.com/defi-products",
+      "networks": "/available-networks",
+      "getting_started": "/creating-my-first-dapp",
+      "templates": "/starting-with-templates",
+      "management": {
+        "base": "/managing-this-tool",
+        "subsections": {
+          "tokens": "/importing-tokens",
+          "domains": "/custom-domains",
+          "teams": "/configuring-teams",
+          "navbar": "/configuring-navbar",
+          "sections": "/default-sections",
+          "custom_sections": "/building-custom-sections",
+          "gated": "/gated-content",
+          "ownership": "/dapp-ownership"
+        }
+      },
+      "features": {
+        "embedding_external": "/embedding-external-sites",
+        "embedding_internal": "/embedding-internal-apps",
+        "version_control": "/app-version-control",
+        "leaderboards": "/leaderboards",
+        "ai_completion": "/ai-completion",
+        "referral": "/referral-system",
+        "ecommerce": "/e-commerce-beta"
+      }
+    }
+  },
+  "dexswap": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexswap",
+    "sections": {
+      "overview": "/overview",
+      "first_swap": "/creating-my-first-swap",
+      "management": "/managing-this-tool"
+    }
+  },
+  "dexgenerator": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexgenerator",
+    "sections": {
+      "overview": "/overview",
+      "requirements": "/requirements",
+      "limitations": "/limitations",
+      "web3_forms": "/web3-forms-generator",
+      "thirdweb_contracts": {
+        "base": "/thirdweb-contracts",
+        "subsections": {
+          "edition": "/edition",
+          "edition_drop": "/edition-drop",
+          "nft_collection": "/nft-collection",
+          "nft_drop": "/nft-drop",
+          "pack": "/pack",
+          "split": "/split",
+          "stake_erc721": "/stakeerc721"
+        }
+      },
+      "first_nft": "/creating-my-first-nft-collection",
+      "manage_contracts": "/managing-deployed-contracts",
+      "updates": "/future-updates"
+    }
+  },
+  "dexexchangepro": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexexchangepro",
+    "sections": {
+      "overview": "/overview",
+      "deployment": "/deploying-this-product"
+    }
+  },
+  "dexnftstore": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexnftstore",
+    "sections": {
+      "overview": "/overview",
+      "first_store": "/creating-my-first-store",
+      "management": "/managing-this-tool"
+    }
+  },
+  "dexwallet": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexwallet",
+    "sections": {
+      "overview": "/overview",
+      "first_wallet": "/creating-my-first-wallet",
+      "management": "/managing-this-tool"
+    }
+  }
+} 

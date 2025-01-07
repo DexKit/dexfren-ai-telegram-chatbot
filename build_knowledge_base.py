@@ -1,63 +1,57 @@
 from knowledge.data_ingestion import DexKitKnowledgeBase
+import json
+import shutil
+import os
 
-# Complete list of DexKit tutorial videos
-YOUTUBE_URLS = [
-    "https://youtu.be/pvzGTxcebW4",
-    "https://youtu.be/U9NuKoqdFxk",
-    "https://youtu.be/Z6v4xBG6TtQ",
-    "https://youtu.be/5TVhUmg-sbc",
-    "https://youtu.be/cK10-fd4eGM",
-    "https://youtu.be/Uhu0VipVBzE",
-    "https://youtu.be/gqpGiA04qIU",
-    "https://youtu.be/f5KRmhEW4aw",
-    "https://youtu.be/4ShlkaUDQms",
-    "https://youtu.be/Oo3agVVp0NM",
-    "https://youtu.be/42EV5wDH-l4",
-    "https://youtu.be/z-IGYnsXCtQ",
-    "https://youtu.be/FuFtQRrbcM4",
-    "https://youtu.be/UIpAsOQtVi8",
-    "https://youtu.be/X7TCt0VCv20",
-    "https://youtu.be/R4O3mL_ZTi4",
-    "https://youtu.be/FV832caR6MU",
-    "https://youtu.be/A8Kl_20hZDU",
-    "https://youtu.be/eexn_26EBJA",
-    "https://youtu.be/36pmIP7qvg8",
-    "https://youtu.be/4Ex-wV8DWgk",
-    "https://youtu.be/fXppwjRqVpM",
-    "https://youtu.be/dx_2PU6JRlw",
-    "https://youtu.be/rXSekAW4YD4",
-    "https://youtu.be/iLHgctqdaT8",
-    "https://youtu.be/0D00j-KIJ00",
-    "https://youtu.be/0IP1tZZ3KVw",
-    "https://youtu.be/mnGlv7l_E24",
-    "https://youtu.be/KJle-Q_qK5Y",
-    "https://youtu.be/ZofvecpJiVE",
-    "https://youtu.be/LxPa5iuk1R4",
-    "https://youtu.be/uMivD0Rikg8",
-    "https://youtu.be/yhVF6WtZd2A",
-    "https://youtu.be/9Xr22V6smiY",
-    "https://youtu.be/zNn0KG56Tkc",
-    "https://youtu.be/g-1H4KyODWU",
-    "https://youtu.be/aL7apwnXNZs",
-    "https://youtu.be/GpFpBxPHbcA",
-    "https://youtu.be/ppKPqthUTLs",
-    "https://youtu.be/M0vnoVX6rwg",
-    "https://youtu.be/1s99232FoNA",
-    "https://youtu.be/5BHWywnBhhA",
-    "https://youtu.be/oXzV9TzKEbo",
-    "https://youtu.be/UHPY3CIx6G4"
-]
+def clean_previous_training():
+    """Clean previous training data but preserve docs and config"""
+    directories_to_clean = [
+        './knowledge_base',  # Vector store
+        './__pycache__',    # Python cache
+        './knowledge/__pycache__'
+    ]
+    
+    print("Cleaning previous training data...")
+    
+    for directory in directories_to_clean:
+        if os.path.exists(directory):
+            try:
+                shutil.rmtree(directory)
+                print(f"✓ Cleaned {directory}")
+            except Exception as e:
+                print(f"! Error cleaning {directory}: {str(e)}")
+
+def load_youtube_urls():
+    """Load YouTube URLs from config file"""
+    with open('config/youtube_videos.json', 'r') as f:
+        data = json.load(f)
+        return data['video_list']
 
 def main():
-    print("Starting knowledge base creation process...")
-    knowledge_base = DexKitKnowledgeBase()
+    print("\n=== Starting DexKit Knowledge Base Creation ===\n")
     
-    print(f"Processing {len(YOUTUBE_URLS)} videos...")
+    # Clean previous training
+    clean_previous_training()
+    
+    print("\n=== Initializing new training ===\n")
+    
+    knowledge_base = DexKitKnowledgeBase()
+    youtube_urls = load_youtube_urls()
+    
+    print(f"\n=== Processing {len(youtube_urls)} videos ===")
+    print("\n=== Processing documentation and platform pages ===")
+    
     knowledge_base.create_knowledge_base(
         pdf_directory="./docs",
-        youtube_urls=YOUTUBE_URLS
+        youtube_urls=youtube_urls
     )
-    print("Knowledge base created successfully!")
+    
+    print("\n=== Knowledge base created successfully! ===")
+    print("\nReady to use with the Telegram bot.")
 
 if __name__ == "__main__":
-    main() 
+    try:
+        main()
+    except Exception as e:
+        print(f"\n! Error: {str(e)}")
+        exit(1) 
