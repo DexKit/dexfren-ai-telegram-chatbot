@@ -15,8 +15,12 @@ import re
 load_dotenv()
 
 class DexKitKnowledgeBase:
-    def __init__(self):
-        self.embeddings = OpenAIEmbeddings()
+    def __init__(self, chunk_size=500, chunk_overlap=50):
+        self.embeddings = OpenAIEmbeddings(
+            model="text-embedding-3-small"
+        )
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
         self.db = None
         self.youtube_metadata = self._load_youtube_metadata()
         self.docs_metadata = self._load_docs_metadata()
@@ -25,30 +29,33 @@ class DexKitKnowledgeBase:
     def _load_youtube_metadata(self) -> Dict:
         """Load YouTube metadata from config file"""
         try:
-            with open('config/youtube_videos.json', 'r') as f:
-                data = json.load(f)
-                # Create a lookup dictionary for quick access
-                metadata_lookup = {}
-                for category, videos in data['tutorials'].items():
-                    if isinstance(videos, dict):
-                        for subcategory, subcategory_videos in videos.items():
-                            for video in subcategory_videos:
-                                metadata_lookup[video['url']] = {
-                                    'title': video['title'],
-                                    'category': video['category'],
-                                    'product': category,
-                                    'subcategory': subcategory
-                                }
-                    else:
-                        for video in videos:
-                            metadata_lookup[video['url']] = {
-                                'title': video['title'],
-                                'category': video['category'],
-                                'product': category
-                            }
-                return metadata_lookup
+            config_path = 'config/youtube_videos.json'
+            print(f"Loading YouTube metadata from: {os.path.abspath(config_path)}")
+            
+            if not os.path.exists(config_path):
+                print(f"Error: File not found at {config_path}")
+                return {}
+            
+            # Robust file reading
+            with open(config_path, 'rb') as f:
+                content = f.read().decode('utf-8-sig').strip()
+                # Delete BOM
+                if content.startswith(u'\ufeff'):
+                    content = content[1:]
+                print(f"First 100 characters of file: {content[:100]}")
+                
+                try:
+                    data = json.loads(content)
+                    print("JSON loaded successfully")
+                    return data.get('tutorials', {})
+                except json.JSONDecodeError as je:
+                    print(f"JSON Error at position {je.pos}: {je.msg}")
+                    print(f"Near text: {content[max(0, je.pos-20):je.pos+20]}")
+                    return {}
+                
         except Exception as e:
             print(f"Warning: Could not load YouTube metadata: {str(e)}")
+            print(f"Exception type: {type(e)}")
             return {}
         
     def _load_docs_metadata(self) -> Dict:
@@ -105,12 +112,10 @@ class DexKitKnowledgeBase:
             # Get video metadata
             video_metadata = self.youtube_metadata.get(video_url, {})
             
-            # Try different language combinations
-            for langs in [['en'], ['pt'], ['es'], ['en', 'pt'], ['pt', 'en'], 
-                         ['pt', 'es'], ['en', 'es'], ['pt', 'en', 'es']]:
+            # Simplified language priority - only try main languages
+            for langs in [['en'], ['es']]:
                 try:
                     transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
-                    print(f"Found subtitles in {langs} for video: {video_metadata.get('title', video_url)}")
                     break
                 except Exception:
                     continue
@@ -122,25 +127,23 @@ class DexKitKnowledgeBase:
             full_transcript = ' '.join([entry['text'] for entry in transcript_list])
             
             text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=200
+                chunk_size=self.chunk_size,
+                chunk_overlap=self.chunk_overlap
             )
             splits = text_splitter.split_text(full_transcript)
             
-            detected_lang = transcript_list[0].get('language', 'unknown')
-            
-            # Combine video metadata with processing metadata
-            metadata = {
-                'source': video_url,
-                'type': 'youtube',
-                'language': detected_lang,
-                **video_metadata  # Add all video metadata
-            }
+            # Limit number of chunks per video to save tokens
+            splits = splits[:5]  # Only use first 5 chunks
             
             return [
                 Document(
                     page_content=split,
-                    metadata=metadata
+                    metadata={
+                        'source': video_url,
+                        'type': 'youtube',
+                        'title': video_metadata.get('title', 'Unknown'),
+                        'category': video_metadata.get('category', 'General')
+                    }
                 ) for split in splits
             ]
             
@@ -154,21 +157,22 @@ class DexKitKnowledgeBase:
         
         def extract_content(url: str, section: str, category: str) -> Dict:
             try:
-                print(f"Processing URL: {url}")
                 response = requests.get(url)
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
-                # Remove unwanted elements
-                for element in soup.find_all(['script', 'style', 'nav', 'footer']):
+                # More aggressive content cleaning
+                for element in soup.find_all(['script', 'style', 'nav', 'footer', 'header', 'aside']):
                     element.decompose()
                 
-                # Extract main content
                 main_content = soup.find('main') or soup.find('article') or soup.find('div', class_='content')
                 if main_content:
                     text = main_content.get_text(separator='\n', strip=True)
                 else:
                     text = soup.get_text(separator='\n', strip=True)
+                
+                # Limit content length
+                text = text[:5000]  # Only keep first 5000 characters
                 
                 return {
                     'content': text,

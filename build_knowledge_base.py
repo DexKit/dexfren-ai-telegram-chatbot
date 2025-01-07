@@ -23,35 +23,62 @@ def clean_previous_training():
 
 def load_youtube_urls():
     """Load YouTube URLs from config file"""
-    with open('config/youtube_videos.json', 'r') as f:
-        data = json.load(f)
-        return data['video_list']
+    try:
+        with open('config/youtube_videos.json', 'r', encoding='utf-8-sig') as f:
+            content = f.read().strip()
+            data = json.loads(content)
+            urls = data.get('video_list', [])
+            print(f"Successfully loaded {len(urls)} YouTube URLs")
+            return urls
+    except Exception as e:
+        print(f"Error loading YouTube URLs: {str(e)}")
+        return []
 
 def main():
-    print("\n=== Starting DexKit Knowledge Base Creation ===\n")
+    print("\n=== Starting DexKit Knowledge Base Creation (GPT-3.5) ===\n")
     
-    # Clean previous training
-    clean_previous_training()
+    try:
+        # Clean previous training
+        clean_previous_training()
+        
+        print("\n=== Initializing new training ===\n")
+        
+        # Initialize knowledge base with specific parameters
+        knowledge_base = DexKitKnowledgeBase(
+            chunk_size=500,
+            chunk_overlap=50
+        )
+        
+        # Load YouTube URLs
+        youtube_urls = load_youtube_urls()
+        if not youtube_urls:
+            print("Warning: No YouTube URLs loaded")
+        
+        print(f"\n=== Processing {len(youtube_urls)} videos ===")
+        print("\n=== Processing documentation and platform pages ===")
+        
+        # Create knowledge base
+        knowledge_base.create_knowledge_base(
+            pdf_directory="./docs" if os.path.exists("./docs") else None,
+            youtube_urls=youtube_urls
+        )
+        
+        print("\n=== Knowledge base created successfully! ===")
+        print("\nReady to use with the Telegram bot.")
+        
+    except Exception as e:
+        print(f"\n! Error in main process: {str(e)}")
+        print("Stack trace:")
+        import traceback
+        traceback.print_exc()
+        return 1
     
-    print("\n=== Initializing new training ===\n")
-    
-    knowledge_base = DexKitKnowledgeBase()
-    youtube_urls = load_youtube_urls()
-    
-    print(f"\n=== Processing {len(youtube_urls)} videos ===")
-    print("\n=== Processing documentation and platform pages ===")
-    
-    knowledge_base.create_knowledge_base(
-        pdf_directory="./docs",
-        youtube_urls=youtube_urls
-    )
-    
-    print("\n=== Knowledge base created successfully! ===")
-    print("\nReady to use with the Telegram bot.")
+    return 0
 
 if __name__ == "__main__":
     try:
-        main()
+        exit_code = main()
+        exit(exit_code)
     except Exception as e:
-        print(f"\n! Error: {str(e)}")
+        print(f"\n! Critical Error: {str(e)}")
         exit(1) 
