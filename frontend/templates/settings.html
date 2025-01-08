@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- General Settings -->  
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">General settings</h2>
+        <form id="generalSettings" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Bot name</label>
+                <input type="text" name="bot_name" value="DexFren"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">GPT model</label>
+                <select name="gpt_model" 
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Temperature</label>
+                <input type="range" name="temperature" min="0" max="1" step="0.1" value="0.7"
+                       class="mt-1 block w-full">
+                <div class="flex justify-between text-sm text-gray-500">
+                    <span>Precise</span>
+                    <span>Creative</span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Response Settings -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Response settings</h2>
+        <form id="responseSettings" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Max length</label>
+                <input type="number" name="max_length" value="2000" min="100" max="4000"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Timeout (seconds)</label>
+                <input type="number" name="timeout" value="30" min="5" max="120"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="stream_response" checked
+                       class="rounded border-gray-300 text-blue-600">
+                <label class="ml-2 text-sm text-gray-700">Enable streaming responses</label>
+            </div>
+        </form>
+    </div>
+
+    <!-- Alert Settings -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Alert settings</h2>
+        <form id="alertSettings" class="space-y-4">
+            <div class="flex items-center">
+                <input type="checkbox" name="error_alerts" checked
+                       class="rounded border-gray-300 text-blue-600">
+                <label class="ml-2 text-sm text-gray-700">Error alerts</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="training_alerts" checked
+                       class="rounded border-gray-300 text-blue-600">
+                <label class="ml-2 text-sm text-gray-700">Training alerts</label>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email for alerts</label>
+                <input type="email" name="alert_email" placeholder="admin@example.com"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+        </form>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-end space-x-4">
+        <button onclick="resetSettings()"
+                class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">
+            Reset values
+        </button>
+        <button onclick="saveSettings()"
+                class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+            Save changes
+        </button>
+    </div>
+</div>
+
+<script>
+function saveSettings() {
+    const forms = ['generalSettings', 'responseSettings', 'alertSettings'];
+    const settings = {};
+    
+    forms.forEach(formId => {
+        const form = document.getElementById(formId);
+        const formData = new FormData(form);
+        formData.forEach((value, key) => {
+            settings[key] = value;
+        });
+    });
+    
+    fetch('/api/settings/save', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Settings saved successfully');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving settings:', error);
+        alert('Error saving settings');
+    });
+}
+
+function resetSettings() {
+    if (confirm('Are you sure you want to reset the default settings?')) {
+        fetch('/api/settings/reset', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

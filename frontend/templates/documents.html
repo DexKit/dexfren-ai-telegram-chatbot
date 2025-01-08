@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Upload New Document -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Add document</h2>
+        <form id="uploadForm" class="space-y-4">
+            <div class="flex items-center space-x-4">
+                <input type="file" accept=".pdf" 
+                       class="flex-1 p-2 border rounded">
+                <button type="submit" 
+                        class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
+                    Subir
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Add URL -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Add URL</h2>
+        <form id="urlForm" class="space-y-4">
+            <div class="flex items-center space-x-4">
+                <input type="url" placeholder="https://youtube.com/..." 
+                       class="flex-1 p-2 border rounded">
+                <button type="submit"
+                        class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                    Añadir
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Current Documents -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Current documents</h2>
+        <div class="space-y-4">
+            {% for doc in documents %}
+            <div class="flex items-center justify-between p-3 border rounded hover:bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <span class="text-gray-500">
+                        {% if doc.type == 'pdf' %}
+                        📄
+                        {% else %}
+                        🎥
+                        {% endif %}
+                    </span>
+                    <span>{{ doc.name }}</span>
+                </div>
+                <button onclick="removeDocument('{{ doc.name }}')"
+                        class="text-red-500 hover:text-red-600">
+                    Delete
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

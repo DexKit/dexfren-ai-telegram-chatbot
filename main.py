@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from swarm import Swarm, Agent
 from knowledge.data_ingestion import DexKitKnowledgeBase
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from knowledge.documentation_manager import DocumentationManager
 from chromadb.config import Settings
 import sys
@@ -262,6 +262,12 @@ def load_youtube_metadata():
         logging.error(f"Error loading YouTube metadata: {e}")
         return {}
 
+async def shutdown():
+    """Graceful shutdown function for the bot"""
+    if 'app' in globals() and app.is_running():
+        await app.shutdown()
+    print("Bot stopped gracefully")
+
 def main():
     """Initialize and run the bot"""
     try:
@@ -272,6 +278,7 @@ def main():
             sys.exit(1)
             
         # Initialize Telegram bot
+        global app
         app = Application.builder().token(os.getenv('TELEGRAM_BOT_TOKEN')).build()
         
         if not os.getenv('TELEGRAM_BOT_TOKEN'):
