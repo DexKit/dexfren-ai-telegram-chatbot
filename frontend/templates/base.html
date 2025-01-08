@@ -6,33 +6,129 @@
     <title>DexFren Bot Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between">
-                <div class="flex space-x-7">
-                    <div class="flex items-center py-4">
-                        <span class="font-semibold text-gray-500 text-lg">DexFren Admin</span>
+<body class="bg-gray-50 min-h-screen font-['Inter']">
+    <!-- Sidebar toggle button -->
+    <button id="sidebarToggle" 
+            class="fixed bottom-4 left-4 z-50 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
+
+    <!-- Overlay for mobile -->
+    <div id="sidebarOverlay" 
+         class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden"
+         onclick="toggleSidebar()">
+    </div>
+
+    <!-- Sidebar -->
+    <nav id="sidebar" 
+         class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 -translate-x-full">
+        <div class="flex flex-col h-full">
+            <div class="p-4 border-b">
+                <span class="text-xl font-bold text-gray-800">DexFren Admin</span>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-2">
+                <a href="{{ url_for('dashboard') }}" 
+                   class="block p-3 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-blue-600">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
                     </div>
-                    <div class="hidden md:flex items-center space-x-1">
-                        <a href="{{ url_for('dashboard') }}" class="py-4 px-2 text-gray-500 hover:text-green-500">Dashboard</a>
-                        <a href="{{ url_for('documents') }}" class="py-4 px-2 text-gray-500 hover:text-green-500">Documents</a>
-                        <a href="{{ url_for('training') }}" class="py-4 px-2 text-gray-500 hover:text-green-500">Training</a>
+                </a>
+                
+                <a href="{{ url_for('documents') }}"
+                   class="block p-3 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-blue-600">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>Documents</span>
                     </div>
-                </div>
-                <div class="flex items-center">
-                    <button id="botToggle" class="px-4 py-2 rounded-md" 
-                            :class="isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'">
-                        <span x-text="isRunning ? 'Stop Bot' : 'Start Bot'"></span>
-                    </button>
-                </div>
+                </a>
+                
+                <a href="{{ url_for('training') }}"
+                   class="block p-3 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-blue-600">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        <span>Training</span>
+                    </div>
+                </a>
             </div>
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8">
-        {% block content %}{% endblock %}
-    </main>
+    <!-- Main content -->
+    <div id="mainContent" class="min-h-screen transition-all duration-300">
+        <main class="container mx-auto px-4 py-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        let sidebarOpen = false;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggleButton = document.getElementById('sidebarToggle');
+            
+            sidebarOpen = !sidebarOpen;
+            
+            if (sidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                mainContent.classList.remove('lg:ml-0');
+                mainContent.classList.add('lg:ml-64');
+                toggleButton.innerHTML = `
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                `;
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                mainContent.classList.remove('lg:ml-64');
+                mainContent.classList.add('lg:ml-0');
+                toggleButton.innerHTML = `
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                `;
+            }
+
+            if (window.innerWidth < 1024) {
+                document.body.classList.toggle('overflow-hidden', sidebarOpen);
+            }
+        }
+
+        document.getElementById('sidebarToggle').addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (sidebarOpen && !document.getElementById('sidebar').contains(e.target)) {
+                toggleSidebar();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 1024 && sidebarOpen) {
+                toggleSidebar();
+            }
+        });
+    </script>
 </body>
 </html>
