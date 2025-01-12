@@ -1,0 +1,9 @@
+@echo off
+echo Enabling virtual environment...
+call .venv\Scripts\activate
+
+echo Starting DexFren AI Bot...
+python run.py
+
+echo Disabling virtual environment...
+deactivate 

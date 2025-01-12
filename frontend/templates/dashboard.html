@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- System Console -->
+    <div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-md">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-white">System Console</h2>
+            <span class="px-2 py-1 bg-green-500 text-xs font-medium text-white rounded-full">LIVE</span>
+        </div>
+        <div id="consoleOutput" class="font-mono text-sm text-green-400 bg-black p-4 rounded h-48 overflow-y-auto">
+            <div class="space-y-1">
+                {% for log in initial_logs %}
+                    <div>[INFO] {{ log }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Knowledge Base Stats -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Knowledge Base</h2>
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600">PDF Documents</span>
+                <span class="font-medium text-blue-600">{{ stats.total_docs }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600">YouTube Videos</span>
+                <span class="font-medium text-red-600">{{ stats.total_videos }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600">Categories</span>
+                <span class="font-medium text-purple-600">{{ stats.categories|length }}</span>
+            </div>
+            <div class="pt-4 border-t">
+                <span class="text-sm text-gray-500">Last Update</span><br>
+                <span class="font-medium">
+                    {% if stats.last_training %}
+                        {{ stats.last_training }}
+                    {% else %}
+                        No updates yet
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions & Categories -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+    <!-- Quick Actions -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div class="space-y-4">
+            <a href="{{ url_for('documents') }}" 
+               class="btn btn-primary w-full flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span>Manage Documents</span>
+            </a>
+
+            <button onclick="startTraining()" 
+                    class="w-full px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    {% if not has_documents or not stats.needs_training %}disabled{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Start Training</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Content Categories</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {% for category in stats.categories|sort %}
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                <span class="capitalize text-sm font-medium text-gray-700">{{ category }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simulated console updates
+    function addConsoleMessage(message, type = 'INFO') {
+        const console = document.getElementById('consoleOutput');
+        const div = document.createElement('div');
+        div.textContent = `[${type}] ${message}`;
+        div.className = 'text-green-400';
+        console.appendChild(div);
+        console.scrollTop = console.scrollHeight;
+    }
+
+    // Add some activity messages periodically
+    setInterval(() => {
+        const messages = [
+            'Checking knowledge base integrity...',
+            'Processing user queries...',
+            'Cache optimization running...',
+            'System health check: OK',
+            'Memory usage: Optimal'
+        ];
+        addConsoleMessage(messages[Math.floor(Math.random() * messages.length)]);
+    }, 5000);
+</script>
+{% endblock %}

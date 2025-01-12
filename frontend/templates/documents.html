@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8 p-6">
+    <!-- Add Document Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Add Document</h2>
+        
+        <!-- PDF Upload -->
+        <div class="mb-6">
+            <form id="uploadForm" class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">PDF File</label>
+                        <div class="flex items-center">
+                            <input type="file" 
+                                   id="pdfFile" 
+                                   accept=".pdf"
+                                   class="hidden" 
+                                   onchange="updateFileName(this)">
+                            <label for="pdfFile" 
+                                   class="flex-1 cursor-pointer px-4 py-2 border border-gray-300 rounded-l-md bg-white hover:bg-gray-50 text-sm text-gray-700">
+                                <span id="fileName">No file chosen</span>
+                            </label>
+                            <button type="button" 
+                                    onclick="document.getElementById('pdfFile').click()" 
+                                    class="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-r-md border border-l-0 border-gray-300">
+                                Choose File
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- YouTube URL -->
+        <div>
+            <form id="urlForm" class="space-y-4">
+                <div class="flex flex-col md:flex-row items-start gap-4">
+                    <div class="w-full">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">YouTube URL</label>
+                        <input type="url" 
+                               id="videoUrl"
+                               placeholder="https://youtube.com/..." 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="w-full md:w-1/3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <input type="text"
+                               id="category"
+                               placeholder="tutorial, guide, etc."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit"
+                            class="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 mt-6 md:mt-0">
+                        Add URL
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Documents Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Current Documents</h2>
+        <div class="space-y-4">
+            {% for doc in documents %}
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                <div class="flex items-center space-x-4">
+                    <span class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg {% if doc.type == 'pdf' %}bg-red-100 text-red-700{% else %}bg-purple-100 text-purple-700{% endif %}">
+                        {% if doc.type == 'pdf' %}
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        {% endif %}
+                    </span>
+                    <div class="flex flex-col">
+                        <span class="font-medium text-gray-900">{{ doc.name }}</span>
+                        {% if doc.category %}
+                        <span class="text-sm text-gray-500">Category: {{ doc.category }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    {% if doc.type == 'youtube' and doc.url %}
+                    <a href="{{ doc.url }}" 
+                       target="_blank"
+                       class="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors duration-200">
+                        View
+                    </a>
+                    {% endif %}
+                    <button onclick="removeDocument('{{ doc.name }}')"
+                            class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-md transition-colors duration-200">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('pdfFile');
+    const file = fileInput.files[0];
+    const uploadButton = this.querySelector('button[type="submit"]');
+    const originalButtonText = uploadButton.innerHTML;
+    
+    if (!file) {
+        showNotification('Please select a file first', 'error');
+        return;
+    }
+    
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+        showNotification('Only PDF files are allowed', 'error');
+        return;
+    }
+    
+    // Check file size before uploading (50MB)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showNotification(`File is too large. Maximum size is 50MB. Your file is ${(file.size / (1024*1024)).toFixed(2)}MB`, 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        // Show loading state
+        uploadButton.disabled = true;
+        uploadButton.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Uploading...
+        `;
+        
+        const response = await fetch('/api/documents/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('File uploaded successfully', 'success');
+            // Wait a moment before reloading to see the notification
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showNotification(data.error || 'Error uploading file', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error uploading file. Please try again.', 'error');
+    } finally {
+        // Restore the button
+        uploadButton.disabled = false;
+        uploadButton.innerHTML = originalButtonText;
+    }
+});
+
+// Function to show notifications
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white transform transition-all duration-500 ease-in-out z-50 ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+        'bg-blue-500'
+    }`;
+    
+    notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+            ${type === 'success' ? `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            ` : type === 'error' ? `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            ` : `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            `}
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate entry
+    setTimeout(() => notification.classList.add('translate-y-2'), 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.add('opacity-0');
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+function updateFileName(input) {
+    const fileName = input.files[0]?.name || 'No file chosen';
+    document.getElementById('fileName').textContent = fileName;
+}
+
+async function removeDocument(filename) {
+    if (!confirm('Are you sure you want to delete this document?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/documents/delete/${filename}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Error deleting file');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error deleting file');
+    }
+}
+</script>
+{% endblock %}

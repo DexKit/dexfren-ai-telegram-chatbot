@@ -4,51 +4,291 @@
       "getting_started": [
         {
           "url": "https://youtu.be/pvzGTxcebW4",
-          "title": "Introduction to DexAppBuilder",
-          "category": "basics",
+          "title": "Tutorial | Configure your custom domain to your DApp made with DexAppBuilder",
+          "category": "configuration",
           "priority": 1
         },
         {
           "url": "https://youtu.be/U9NuKoqdFxk",
-          "title": "Creating Your First DApp",
+          "title": "Donate crypto to DexAppBuilder at Gitcoin's GG22 Quadratic Round",
           "category": "basics",
           "priority": 1
         }
       ],
-      "advanced_features": [
+      "features": [
         {
           "url": "https://youtu.be/Z6v4xBG6TtQ",
-          "title": "Custom Domains Configuration",
-          "category": "configuration",
+          "title": "Tutorial | Set up leaderboards and gamify your DApp built with DexAppBuilder",
+          "category": "advanced",
           "priority": 2
         },
         {
           "url": "https://youtu.be/5TVhUmg-sbc",
-          "title": "Team Management",
-          "category": "configuration",
+          "title": "Tutorial | Set up your Multi-Level Marketing (MLM) links and start earning with DexAppBuilder",
+          "category": "advanced",
           "priority": 2
+        }
+      ],
+      "updates": [
+        {
+          "url": "https://youtu.be/gqpGiA04qIU",
+          "title": "DexAppBuilder update v.0.22.0 highlights",
+          "category": "updates",
+          "priority": 3
+        },
+        {
+          "url": "https://youtu.be/z-IGYnsXCtQ",
+          "title": "DexAppBuilder update v.0.21.0 highlights",
+          "category": "updates",
+          "priority": 3
+        },
+        {
+          "url": "https://youtu.be/UIpAsOQtVi8",
+          "title": "DexAppBuilder update v.0.20.0 highlights",
+          "category": "updates",
+          "priority": 3
+        },
+        {
+          "url": "https://youtu.be/X7TCt0VCv20",
+          "title": "DexAppBuilder update v.0.19.0 highlights",
+          "category": "updates",
+          "priority": 3
+        },
+        {
+          "url": "https://youtu.be/R4O3mL_ZTi4",
+          "title": "DexAppBuilder update v.0.18.0 highlights",
+          "category": "updates",
+          "priority": 3
+        },
+        {
+          "url": "https://youtu.be/A8Kl_20hZDU",
+          "title": "DexAppBuilder update v.0.17.0 highlights",
+          "category": "updates",
+          "priority": 3
         }
       ]
     },
-    "dexswap": [
+    "tokens_and_defi": {
+      "token_creation": [
+        {
+          "url": "https://youtu.be/cK10-fd4eGM",
+          "title": "Tutorial | Create meme token app & deploy liquidity pool on Uniswap w/ DexGenerator + DexAppBuilder",
+          "category": "defi",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/f5KRmhEW4aw",
+          "title": "Tutorial | Create your ERC20 meme token without a single line of code using DexAppBuilder",
+          "category": "defi",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/4Ex-wV8DWgk",
+          "title": "Tutorial | Creating an ERC20 Token on Optimism network with DexAppBuilder",
+          "category": "defi",
+          "priority": 2
+        }
+      ],
+      "dex_and_swap": [
+        {
+          "url": "https://youtu.be/4ShlkaUDQms",
+          "title": "Tutorial | Create your own branded Decentralized Exchange with DexAppBuilder and 0x API",
+          "category": "defi",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/42EV5wDH-l4",
+          "title": "Tutorial | Clone your own crypto DEX swap from DexAppBuilder templates",
+          "category": "defi",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/fXppwjRqVpM",
+          "title": "Tutorial | Creating a Swap DApp on Optimism network with DexAppBuilder",
+          "category": "defi",
+          "priority": 2
+        },
+        {
+          "url": "https://youtu.be/0D00j-KIJ00",
+          "title": "Tutorial | Create Your Own Free Decentralized Exchange with DexAppBuilder!",
+          "category": "defi",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/uMivD0Rikg8",
+          "title": "Create your DEX aggregator in seconds with Quick Builder!",
+          "category": "defi",
+          "priority": 1
+        }
+      ]
+    },
+    "nft": {
+      "marketplace": [
+        {
+          "url": "https://youtu.be/Oo3agVVp0NM",
+          "title": "Tutorial | Clona un mercado de NFTs desde una plantilla en DexAppBuilder",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/FuFtQRrbcM4",
+          "title": "Tutorial | Despliega y aloja en Vercel tu propio mercado de NFTs con DexKit",
+          "category": "nft",
+          "priority": 1
+        }
+      ],
+      "creation_and_minting": [
+        {
+          "url": "https://youtu.be/FV832caR6MU",
+          "title": "Tutorial | Mass production of NFTs made easy – mint and airdrop in just minutes with DexAppBuilder!",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/36pmIP7qvg8",
+          "title": "Tutorial | No Coding Required! Build Your NFT Collection in Arbitrum with DexAppBuilder",
+          "category": "nft",
+          "priority": 2
+        },
+        {
+          "url": "https://youtu.be/dx_2PU6JRlw",
+          "title": "Tutorial | Creating your first NFT collection on Optimism network with DexAppBuilder",
+          "category": "nft",
+          "priority": 2
+        },
+        {
+          "url": "https://youtu.be/rXSekAW4YD4",
+          "title": "Tutorial | Building NFT-Powered DApps with DexAppBuilder on Optimism Network",
+          "category": "nft",
+          "priority": 2
+        }
+      ],
+      "thirdweb_integration": [
+        {
+          "url": "https://youtu.be/iLHgctqdaT8",
+          "title": "Tutorial | Using Thirdweb Edition Drop smart contract with DexAppBuilder",
+          "category": "nft",
+          "priority": 2
+        },
+        {
+          "url": "https://youtu.be/0IP1tZZ3KVw",
+          "title": "Tutorial | Deploy Thirdweb NFT Drop smart contract with DexAppBuilder",
+          "category": "nft",
+          "priority": 2
+        },
+        {
+          "url": "https://youtu.be/mnGlv7l_E24",
+          "title": "Tutorial | Deploy Thirdweb Token Drop smart contract with DexAppBuilder",
+          "category": "nft",
+          "priority": 2
+        },
+        {
+          "url": "https://youtu.be/KJle-Q_qK5Y",
+          "title": "Tutorial | Deploy Thirdweb Edition Drop smart contract with DexAppBuilder",
+          "category": "nft",
+          "priority": 2
+        }
+      ],
+      "marketplace_setup": [
+        {
+          "url": "https://youtu.be/UHPY3CIx6G4",
+          "title": "Creating your first NFT Marketplace. Step 1",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/oXzV9TzKEbo",
+          "title": "Setting up General section building your NFT marketplace. Step 2",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/5BHWywnBhhA",
+          "title": "Setting up theme colors for your NFT marketplace. Step 3",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/1s99232FoNA",
+          "title": "Configure default page layout for your NFT marketplace. Step 4",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/M0vnoVX6rwg",
+          "title": "Building a custom page section for your NFT marketplace. Step 5",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/ppKPqthUTLs",
+          "title": "Setting up your NFT marketplace fees. Step 6",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/GpFpBxPHbcA",
+          "title": "Setting up collections and tokens in your NFT marketplace. Step 7",
+          "category": "nft",
+          "priority": 1
+        },
+        {
+          "url": "https://youtu.be/aL7apwnXNZs",
+          "title": "Setting up a custom domain. Step 8 (last)",
+          "category": "nft",
+          "priority": 1
+        }
+      ]
+    },
+    "additional_features": [
       {
-        "url": "https://youtu.be/cK10-fd4eGM",
-        "title": "DexSwap Overview",
-        "category": "basics",
+        "url": "https://youtu.be/Uhu0VipVBzE",
+        "title": "Tutorial | How to airdrop crypto without coding using DexAppBuilder",
+        "category": "features",
+        "priority": 2
+      },
+      {
+        "url": "https://youtu.be/eexn_26EBJA",
+        "title": "Tutorial | Build a crypto donation page without coding using DexAppBuilder",
+        "category": "features",
+        "priority": 2
+      },
+      {
+        "url": "https://youtu.be/ZofvecpJiVE",
+        "title": "Tutorial | Create protected pages with DexAppBuilder's Gated Content Feature",
+        "category": "features",
+        "priority": 2
+      }
+    ],
+    "dexkit_platform": [
+      {
+        "url": "https://youtu.be/LxPa5iuk1R4",
+        "title": "How to Quickly Sell Your Open NFT Offers with DexNFTStore",
+        "category": "platform",
         "priority": 1
       },
       {
-        "url": "https://youtu.be/Uhu0VipVBzE",
-        "title": "Creating Your First Swap",
-        "category": "basics",
+        "url": "https://youtu.be/yhVF6WtZd2A",
+        "title": "Create crypto apps and sell as NFTs with DexKit's DexAppBuilder",
+        "category": "platform",
         "priority": 1
-      }
-    ],
-    "general": [
+      },
       {
-        "url": "https://youtu.be/gqpGiA04qIU",
-        "title": "Platform Overview",
-        "category": "overview",
+        "url": "https://youtu.be/9Xr22V6smiY",
+        "title": "Place a bid for your favorite NFTs on any community-created marketplace",
+        "category": "platform",
+        "priority": 2
+      },
+      {
+        "url": "https://youtu.be/zNn0KG56Tkc",
+        "title": "Design and mint your amazing NFT collections using generative AI",
+        "category": "platform",
+        "priority": 2
+      },
+      {
+        "url": "https://youtu.be/g-1H4KyODWU",
+        "title": "Build your crypto website with DexKit Wizard",
+        "category": "platform",
         "priority": 1
       }
     ]
@@ -60,6 +300,43 @@
     "https://youtu.be/5TVhUmg-sbc",
     "https://youtu.be/cK10-fd4eGM",
     "https://youtu.be/Uhu0VipVBzE",
-    "https://youtu.be/gqpGiA04qIU"
+    "https://youtu.be/gqpGiA04qIU",
+    "https://youtu.be/f5KRmhEW4aw",
+    "https://youtu.be/4ShlkaUDQms",
+    "https://youtu.be/Oo3agVVp0NM",
+    "https://youtu.be/42EV5wDH-l4",
+    "https://youtu.be/z-IGYnsXCtQ",
+    "https://youtu.be/FuFtQRrbcM4",
+    "https://youtu.be/UIpAsOQtVi8",
+    "https://youtu.be/X7TCt0VCv20",
+    "https://youtu.be/R4O3mL_ZTi4",
+    "https://youtu.be/FV832caR6MU",
+    "https://youtu.be/A8Kl_20hZDU",
+    "https://youtu.be/eexn_26EBJA",
+    "https://youtu.be/36pmIP7qvg8",
+    "https://youtu.be/4Ex-wV8DWgk",
+    "https://youtu.be/fXppwjRqVpM",
+    "https://youtu.be/dx_2PU6JRlw",
+    "https://youtu.be/rXSekAW4YD4",
+    "https://youtu.be/iLHgctqdaT8",
+    "https://youtu.be/0D00j-KIJ00",
+    "https://youtu.be/0IP1tZZ3KVw",
+    "https://youtu.be/mnGlv7l_E24",
+    "https://youtu.be/KJle-Q_qK5Y",
+    "https://youtu.be/ZofvecpJiVE",
+    "https://youtu.be/LxPa5iuk1R4",
+    "https://youtu.be/uMivD0Rikg8",
+    "https://youtu.be/yhVF6WtZd2A",
+    "https://youtu.be/9Xr22V6smiY",
+    "https://youtu.be/zNn0KG56Tkc",
+    "https://youtu.be/g-1H4KyODWU",
+    "https://youtu.be/aL7apwnXNZs",
+    "https://youtu.be/GpFpBxPHbcA",
+    "https://youtu.be/ppKPqthUTLs",
+    "https://youtu.be/M0vnoVX6rwg",
+    "https://youtu.be/1s99232FoNA",
+    "https://youtu.be/5BHWywnBhhA",
+    "https://youtu.be/oXzV9TzKEbo",
+    "https://youtu.be/UHPY3CIx6G4"
   ]
 }

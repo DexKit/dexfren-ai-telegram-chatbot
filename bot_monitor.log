@@ -1,0 +1,33 @@
+2025-01-08 18:29:16,060 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:29:18,102 - INFO - Cleaned directory: ./knowledge_base
+2025-01-08 18:29:18,102 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:29:18,103 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:30:09,463 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:30:11,493 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:30:11,493 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:31:13,773 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:31:15,805 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:31:15,807 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:32:24,899 - INFO - Knowledge base rebuilt successfully
+2025-01-08 18:32:24,903 - INFO - Bot restarted successfully with PID: 13104
+2025-01-08 18:34:47,186 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:34:49,223 - INFO - Cleaned directory: ./knowledge_base
+2025-01-08 18:34:49,224 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:34:49,225 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:36:04,895 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:36:06,924 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:36:06,925 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:37:16,379 - INFO - Knowledge base rebuilt successfully
+2025-01-08 18:37:16,381 - INFO - Bot restarted successfully with PID: 7768
+2025-01-08 18:38:03,044 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:38:05,094 - INFO - Cleaned directory: ./knowledge_base
+2025-01-08 18:38:05,095 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:38:05,095 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:39:12,066 - INFO - Knowledge base rebuilt successfully
+2025-01-08 18:39:12,069 - INFO - Bot restarted successfully with PID: 12916
+2025-01-08 18:42:13,436 - WARNING - Bot crashed, starting recovery...
+2025-01-08 18:42:15,473 - INFO - Cleaned directory: ./knowledge_base
+2025-01-08 18:42:15,474 - INFO - Cleaned directory: ./__pycache__
+2025-01-08 18:42:15,475 - INFO - Cleaned directory: ./knowledge/__pycache__
+2025-01-08 18:43:24,032 - INFO - Knowledge base rebuilt successfully
+2025-01-08 18:43:24,036 - INFO - Bot restarted successfully with PID: 14164
