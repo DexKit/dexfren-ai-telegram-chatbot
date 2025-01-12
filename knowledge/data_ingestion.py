@@ -17,7 +17,8 @@ load_dotenv()
 class DexKitKnowledgeBase:
     def __init__(self, chunk_size=500, chunk_overlap=50):
         self.embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small"
+            model="text-embedding-3-small",
+            api_key=os.getenv('OPENAI_API_KEY')
         )
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap

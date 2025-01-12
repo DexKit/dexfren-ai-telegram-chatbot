@@ -19,8 +19,9 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# Load environment variables
 load_dotenv()
+
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 # Initialize Swarm and Knowledge Base
 client = Swarm()
@@ -40,9 +41,13 @@ dexkit_agent = Agent(
 
     CORE BEHAVIOR:
     1. Use ONLY knowledge base info - NO external sources
-    2. If unsure, ask specific questions
-    3. Keep responses brief and focused
-    4. Use examples when explaining
+    2. If unsure, ask SPECIFIC clarifying questions about:
+       - Network being used
+       - Product version
+       - Current setup details
+    3. Keep responses focused and structured
+    4. Use detailed examples with actual configurations
+    5. Verify technical accuracy before responding
 
     URL RULES (MANDATORY):
     1. ONLY use URLs from this approved list:
@@ -76,22 +81,40 @@ dexkit_agent = Agent(
     • BSC: dexappbuilder.dexkit.com/token/buy/bsc/kit
     • MATIC: dexappbuilder.dexkit.com/token/buy/polygon/kit
 
+    Available Networks:
+    • Ethereum mainnet
+    • Ethereum sepolia testnet and Goerli
+    • BSC (Binance Smart Chain, now Binance Chain) mainnet and testnet
+    • Polygon (formerly Matic Network)
+    • Arbitrum
+    • Avalanche
+    • Optimism
+    • Fantom
+    • Base
+    • Blast
+    • Blast testnet
+    • Pulsechain (with some limitations)
+
     CRITICAL RULES FOR TOKEN CREATION:
     1. ALL token creation MUST be directed to: dexappbuilder.dexkit.com/forms/contracts/create
     2. NEVER suggest token creation through admin panel
     3. Token creation is ONLY available through DexGenerator contract forms
+    4. Always verify network compatibility before suggesting token creation
+    5. Include gas fee warnings for each network
 
     RESPONSE FORMAT:
-    1. Start with direct answer
+    1. Start with direct, actionable answer
     2. Include ONLY relevant approved URLs
-    3. Use bullet points for steps
-    4. End with next step suggestion
+    3. Use clear, numbered steps
+    4. Provide specific configuration examples
+    5. End with next step suggestion and verification steps
 
     FORMATTING:
     • Links: [text](URL)
     • Important: *text*
-    • Details: _text_
-    • Code: `text`
+    • Technical Details: _text_
+    • Configuration: `text`
+    • Network Names: **text**
 
     STRICTLY PROHIBITED:
     • External URLs or resources
@@ -101,11 +124,14 @@ dexkit_agent = Agent(
     • Personal opinions
     • Made-up information
     • Incomplete URLs
+    • Assumptions about user setup
     
     SOCIAL MEDIA RULES:
     1. ONLY use official social media links from platform_urls.json
     2. NEVER modify or shorten social media URLs
     3. When suggesting Discord, ALWAYS use the official invite link
+    4. Direct technical questions to documentation first
+    5. Use social media only for community engagement
     """,
     model="gpt-3.5-turbo"
 )
@@ -159,9 +185,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         relevant_info = knowledge_base.query_knowledge(message_text)
         context_text = "\n".join([doc.page_content for doc in relevant_info])
         
+        # Improve conversation context
         conversation = [
-            {"role": "system", "content": f"{dexkit_agent.instructions}\n\nContext:\n{context_text}"}
-        ] + active_conversations[chat_id][-5:]
+            {"role": "system", "content": f"{dexkit_agent.instructions}\n\n{context_text}"},
+            {"role": "system", "content": "Remember to be specific and provide actionable steps."}
+        ]
+        
+        # Add context from last 3 interactions for better continuity
+        if len(active_conversations[chat_id]) > 1:
+            conversation.extend(active_conversations[chat_id][-6:])
+        
+        # Add current message
+        conversation.append({
+            "role": "user",
+            "content": f"Question: {message_text}\nPlease provide a detailed and specific response."
+        })
         
         typing_task = asyncio.create_task(keep_typing(context.bot, chat_id))
         
@@ -211,17 +249,36 @@ async def keep_typing(bot, chat_id):
 def process_context(knowledge_base, message_text):
     relevant_info = knowledge_base.query_knowledge(message_text)
     
-    # Prioritize content related to contracts/tokens
-    priority_docs = [doc for doc in relevant_info 
-                    if any(term in doc.page_content.lower() 
-                          for term in ['contract', 'token', 'erc20'])]
+    # Improve content prioritization
+    priority_keywords = [
+        'contract', 'token', 'erc20', 'dapp', 'builder', 
+        'template', 'swap', 'exchange', 'wallet', 'nft'
+    ]
     
-    other_docs = [doc for doc in relevant_info if doc not in priority_docs]
+    # Classify documents by relevance
+    priority_docs = []
+    secondary_docs = []
     
-    # Combine prioritized documents
-    ordered_docs = priority_docs + other_docs
+    for doc in relevant_info:
+        content_lower = doc.page_content.lower()
+        # Calculate score based on keywords
+        score = sum(2 for keyword in priority_keywords if keyword in content_lower)
+        # Add score for exact match with query
+        score += sum(3 for word in message_text.lower().split() if word in content_lower)
+        
+        if score > 2:
+            priority_docs.append((score, doc))
+        else:
+            secondary_docs.append((score, doc))
     
-    return "\n".join([doc.page_content for doc in ordered_docs])
+    # Sort by score
+    priority_docs.sort(reverse=True)
+    secondary_docs.sort(reverse=True)
+    
+    # Combine prioritized documents (maximum 5 documents)
+    ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
+    
+    return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
 
 CHROMA_SETTINGS = Settings(
     anonymized_telemetry=False,
