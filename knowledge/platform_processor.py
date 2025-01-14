@@ -118,22 +118,36 @@ class PlatformProcessor:
             platform_data = []
             
             def process_section(data: Dict, parent_category: str = "", section: str = ""):
-                for key, value in data.items():
-                    if isinstance(value, str) and value.startswith('http'):
-                        platform_info = self._scrape_url(
-                            url=value,
-                            category=parent_category,
-                            section=section or key,
-                            type_='platform'
-                        )
-                        if platform_info:
-                            platform_data.append(platform_info)
-                            logging.info(f"Successfully processed platform URL: {value}")
-                        time.sleep(0.5)
-                        
-                    elif isinstance(value, dict):
+                if isinstance(data, str) and data.startswith('http'):
+                    # Handle direct URL strings
+                    platform_info = self._scrape_url(
+                        url=data,
+                        category=parent_category,
+                        section=section,
+                        type_='platform'
+                    )
+                    if platform_info:
+                        platform_data.append(platform_info)
+                        logging.info(f"Successfully processed platform URL: {data}")
+                    time.sleep(0.5)
+                    return
+
+                if isinstance(data, dict):
+                    for key, value in data.items():
                         new_parent = f"{parent_category}/{key}" if parent_category else key
-                        process_section(value, new_parent, key)
+                        if isinstance(value, str) and value.startswith('http'):
+                            platform_info = self._scrape_url(
+                                url=value,
+                                category=new_parent,
+                                section=key,
+                                type_='platform'
+                            )
+                            if platform_info:
+                                platform_data.append(platform_info)
+                                logging.info(f"Successfully processed platform URL: {value}")
+                            time.sleep(0.5)
+                        elif isinstance(value, dict):
+                            process_section(value, new_parent, key)
             
             for section, content in config.items():
                 process_section(content, section)
