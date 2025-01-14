@@ -1,0 +1,16 @@
+{
+  "action_priorities": {
+    "create": {
+      "primary_url": "dexappbuilder.dexkit.com/admin/create",
+      "weight": 3.0
+    },
+    "quick_build": {
+      "primary_url": "dexappbuilder.dexkit.com/admin/quick-builder",
+      "weight": 2.8
+    },
+    "documentation": {
+      "primary_url": "docs.dexkit.com",
+      "weight": 2.0
+    }
+  }
+} 

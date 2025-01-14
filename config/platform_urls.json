@@ -4,48 +4,48 @@
     "dexappbuilder": "https://dexappbuilder.dexkit.com"
   },
   "social": {
-    "discord": "https://discord.com/invite/dexkit-official-943552525217435649",
-    "youtube": "https://www.youtube.com/@DexKit",
-    "twitter": "https://x.com/dexkit",
-    "telegram": "https://t.me/dexkit",
-    "linkedin": "https://www.linkedin.com/company/dexkit",
-    "reddit": "https://www.reddit.com/r/dexkit",
-    "medium": "https://dexkit.medium.com",
-    "instagram": "https://www.instagram.com/dexkit.io",
-    "facebook": "https://www.facebook.com/dexkit.io"
+    "dexkit-discord": "https://discord.com/invite/dexkit-official-943552525217435649",
+    "dexkit-youtube": "https://www.youtube.com/@DexKit",
+    "dexkit-twitter": "https://x.com/dexkit",
+    "dexkit-telegram": "https://t.me/dexkit",
+    "dexkit-linkedin": "https://www.linkedin.com/company/dexkit",
+    "dexkit-reddit": "https://www.reddit.com/r/dexkit",
+    "dexkit-medium": "https://dexkit.medium.com",
+    "dexkit-instagram": "https://www.instagram.com/dexkit.io",
+    "dexkit-facebook": "https://www.facebook.com/dexkit.io"
   },
   "about": {
-    "mission": "https://dexkit.com/about/mission-vision-values",
-    "team": "https://dexkit.com/about/our-team"
+    "dexkit-mission": "https://dexkit.com/about/mission-vision-values",
+    "dexkit-team": "https://dexkit.com/about/our-team"
   },
   "products": {
     "dexappbuilder": {
-      "home": "https://dexappbuilder.dexkit.com",
-      "solutions": "https://dexappbuilder.dexkit.com/solutions",
-      "admin": {
-        "create": "https://dexappbuilder.dexkit.com/admin/create",
-        "dashboard": "https://dexappbuilder.dexkit.com/admin",
-        "templates": "https://docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates",
-        "quick_builders": {
-          "swap": "https://dexappbuilder.dexkit.com/admin/quick-builder/swap",
-          "exchange": "https://dexappbuilder.dexkit.com/admin/quick-builder/exchange",
-          "wallet": "https://dexappbuilder.dexkit.com/admin/quick-builder/wallet",
-          "nft_store": "https://dexappbuilder.dexkit.com/admin/quick-builder/nft-store"
+      "dexkit-dexappbuilder-home": "https://dexappbuilder.dexkit.com",
+      "dexkit-dexappbuilder-solutions": "https://dexappbuilder.dexkit.com/solutions",
+      "dexkit-dexappbuilder-admin": {
+        "dexkit-dexappbuilder-admin-create": "https://dexappbuilder.dexkit.com/admin/create",
+        "dexkit-dexappbuilder-admin-dashboard": "https://dexappbuilder.dexkit.com/admin",
+        "dexkit-dexappbuilder-admin-templates": "https://docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates",
+        "dexkit-dexappbuilder-admin-quick-builders": {
+          "dexkit-dexappbuilder-admin-quick-builder-swap": "https://dexappbuilder.dexkit.com/admin/quick-builder/swap",
+          "dexkit-dexappbuilder-admin-quick-builder-exchange": "https://dexappbuilder.dexkit.com/admin/quick-builder/exchange",
+          "dexkit-dexappbuilder-admin-quick-builder-wallet": "https://dexappbuilder.dexkit.com/admin/quick-builder/wallet",
+          "dexkit-dexappbuilder-admin-quick-builder-nft-store": "https://dexappbuilder.dexkit.com/admin/quick-builder/nft-store"
         }
       }
     }
   },
   "token": {
     "info": {
-      "tokenomics": "https://dexkit.com/our-token/tokenomics",
-      "utilities": "https://dexkit.com/our-token/utilities",
-      "contracts": "https://dexkit.com/our-token/contract-addresses"
+      "dexkit-tokenomics": "https://dexkit.com/our-token/tokenomics",
+      "dexkit-token-utilities": "https://dexkit.com/our-token/utilities",
+      "dexkit-token-contracts": "https://dexkit.com/our-token/contract-addresses"
     },
     "buy": {
-      "ethereum": "https://dexappbuilder.dexkit.com/token/buy/ethereum/kit",
-      "bsc": "https://dexappbuilder.dexkit.com/token/buy/bsc/kit",
-      "polygon": "https://dexappbuilder.dexkit.com/token/buy/polygon/kit"
+      "dexkit-buy-ethereum": "https://dexappbuilder.dexkit.com/token/buy/ethereum/kit",
+      "dexkit-buy-bsc": "https://dexappbuilder.dexkit.com/token/buy/bsc/kit",
+      "dexkit-buy-polygon": "https://dexappbuilder.dexkit.com/token/buy/polygon/kit"
     }
   },
-  "roadmap": "https://dexkit.com/roadmap"
+  "dexkit-roadmap": "https://dexkit.com/roadmap"
 } 

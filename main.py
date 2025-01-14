@@ -13,7 +13,6 @@ import sys
 from typing import Optional
 import json
 
-# Logging configuration
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -23,46 +22,59 @@ load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-# Initialize Swarm and Knowledge Base
 client = Swarm()
 knowledge_base = DexKitKnowledgeBase()
 
-# Store active conversations
 active_conversations = {}
 
-# Initialize documentation manager
 docs_manager = DocumentationManager()
 
-# Define the DexKit agent
 dexkit_agent = Agent(
     name="DexFren",
-    instructions="""
+    instructions=f"""
     You are DexFren, DexKit's support assistant. Follow these rules STRICTLY:
 
     CORE BEHAVIOR:
     1. Use ONLY knowledge base info - NO external sources
-    2. If unsure, ask SPECIFIC clarifying questions about:
-       - Network being used
-       - Product version
-       - Current setup details
+    2. Avoid hallucinations on ANY topic
     3. Keep responses focused and structured
     4. Use detailed examples with actual configurations
     5. Verify technical accuracy before responding
 
-    URL RULES (MANDATORY):
-    1. ONLY use URLs from this approved list:
-    
-    Documentation:
-    • Templates: docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates
+    DOCUMENTATION URLS:
+    DexAppBuilder:
+    • Main: docs.dexkit.com/defi-products
     • Getting Started: docs.dexkit.com/defi-products/dexappbuilder/creating-my-first-dapp
-    
-    DexGenerator & Contracts:
-    • Create Contract: dexappbuilder.dexkit.com/forms/contracts/create
-    • List Contracts: dexappbuilder.dexkit.com/forms/contracts/list
-    • Create Form: dexappbuilder.dexkit.com/forms/create
-    • Manage Forms: dexappbuilder.dexkit.com/forms/manage
-    
-    DApp Builder:
+    • Templates: docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates
+    • Networks: docs.dexkit.com/defi-products/dexappbuilder/available-networks
+    • Management: docs.dexkit.com/defi-products/dexappbuilder/managing-this-tool
+    • Tokens: docs.dexkit.com/defi-products/dexappbuilder/importing-tokens
+    • Domains: docs.dexkit.com/defi-products/dexappbuilder/custom-domains
+    • Teams: docs.dexkit.com/defi-products/dexappbuilder/configuring-teams
+
+    DexGenerator:
+    • Overview: docs.dexkit.com/defi-products/dexgenerator/overview
+    • Requirements: docs.dexkit.com/defi-products/dexgenerator/requirements
+    • Web3 Forms: docs.dexkit.com/defi-products/dexgenerator/web3-forms-generator
+    • NFT Guide: docs.dexkit.com/defi-products/dexgenerator/creating-my-first-nft-collection
+    • Contracts: docs.dexkit.com/defi-products/dexgenerator/managing-deployed-contracts
+
+    DexSwap:
+    • Overview: docs.dexkit.com/defi-products/dexswap/overview
+    • First Swap: docs.dexkit.com/defi-products/dexswap/creating-my-first-swap
+    • Management: docs.dexkit.com/defi-products/dexswap/managing-this-tool
+
+    DexNFTStore:
+    • Overview: docs.dexkit.com/defi-products/dexnftstore/overview
+    • First Store: docs.dexkit.com/defi-products/dexnftstore/creating-my-first-store
+    • Management: docs.dexkit.com/defi-products/dexnftstore/managing-this-tool
+
+    DexWallet:
+    • Overview: docs.dexkit.com/defi-products/dexwallet/overview
+    • First Wallet: docs.dexkit.com/defi-products/dexwallet/creating-my-first-wallet
+    • Management: docs.dexkit.com/defi-products/dexwallet/managing-this-tool
+
+    DApp Builder URLs:
     • Create: dexappbuilder.dexkit.com/admin/create
     • Dashboard: dexappbuilder.dexkit.com/admin
     • Quick Builders:
@@ -70,12 +82,12 @@ dexkit_agent = Agent(
       - Exchange: dexappbuilder.dexkit.com/admin/quick-builder/exchange
       - Wallet: dexappbuilder.dexkit.com/admin/quick-builder/wallet
       - NFT Store: dexappbuilder.dexkit.com/admin/quick-builder/nft-store
-    
+
     Social:
     • Discord: discord.com/invite/dexkit-official-943552525217435649
     • Telegram: t.me/dexkit
     • Twitter: x.com/dexkit
-    
+
     Token:
     • ETH: dexappbuilder.dexkit.com/token/buy/ethereum/kit
     • BSC: dexappbuilder.dexkit.com/token/buy/bsc/kit
@@ -84,8 +96,8 @@ dexkit_agent = Agent(
     Available Networks:
     • Ethereum mainnet
     • Ethereum sepolia testnet and Goerli
-    • BSC (Binance Smart Chain, now Binance Chain) mainnet and testnet
-    • Polygon (formerly Matic Network)
+    • BSC mainnet and testnet
+    • Polygon
     • Arbitrum
     • Avalanche
     • Optimism
@@ -93,7 +105,7 @@ dexkit_agent = Agent(
     • Base
     • Blast
     • Blast testnet
-    • Pulsechain (with some limitations)
+    • Pulsechain
 
     CRITICAL RULES FOR TOKEN CREATION:
     1. ALL token creation MUST be directed to: dexappbuilder.dexkit.com/forms/contracts/create
@@ -125,13 +137,6 @@ dexkit_agent = Agent(
     • Made-up information
     • Incomplete URLs
     • Assumptions about user setup
-    
-    SOCIAL MEDIA RULES:
-    1. ONLY use official social media links from platform_urls.json
-    2. NEVER modify or shorten social media URLs
-    3. When suggesting Discord, ALWAYS use the official invite link
-    4. Direct technical questions to documentation first
-    5. Use social media only for community engagement
     """,
     model="gpt-3.5-turbo"
 )
@@ -152,7 +157,6 @@ How can I assist you today?
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        # Check if message is in private chat or for the bot in groups
         is_private = update.message.chat.type == 'private'
         is_bot_mentioned = bool(update.message.entities and 
             any(entity.type == 'mention' and 
@@ -161,14 +165,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_reply_to_bot = bool(update.message.reply_to_message and 
             update.message.reply_to_message.from_user.id == context.bot.id)
         
-        # Process if private chat OR bot is mentioned/replied to in groups
         if not (is_private or is_bot_mentioned or is_reply_to_bot):
             return
             
         chat_id = update.message.chat_id
         message_text = update.message.text
         
-        # Start typing only when we know we'll respond
         await context.bot.send_chat_action(
             chat_id=chat_id,
             action="typing"
@@ -185,17 +187,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         relevant_info = knowledge_base.query_knowledge(message_text)
         context_text = "\n".join([doc.page_content for doc in relevant_info])
         
-        # Improve conversation context
         conversation = [
             {"role": "system", "content": f"{dexkit_agent.instructions}\n\n{context_text}"},
             {"role": "system", "content": "Remember to be specific and provide actionable steps."}
         ]
         
-        # Add context from last 3 interactions for better continuity
         if len(active_conversations[chat_id]) > 1:
             conversation.extend(active_conversations[chat_id][-6:])
         
-        # Add current message
         conversation.append({
             "role": "user",
             "content": f"Question: {message_text}\nPlease provide a detailed and specific response."
@@ -217,11 +216,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             })
             
         finally:
-            # Cancel typing before sending message
             typing_task.cancel()
-            await asyncio.sleep(0.1)  # Small delay to ensure typing is cancelled
+            await asyncio.sleep(0.1)
         
-        # Send message after typing is cancelled
         await update.message.reply_text(
             bot_response,
             reply_to_message_id=update.message.message_id,
@@ -241,44 +238,42 @@ async def keep_typing(bot, chat_id):
                 chat_id=chat_id,
                 action="typing"
             )
-            # Reduced sleep time to keep typing indicator more consistent
             await asyncio.sleep(3)
     except asyncio.CancelledError:
         pass
 
+def process_knowledge_base_results(relevant_info):
+    """Process and format knowledge base results"""
+    if not relevant_info:
+        return "No relevant information found."
+    
+    formatted_content = []
+    for doc in relevant_info:
+        content = doc.page_content.strip()
+        if hasattr(doc.metadata, 'source'):
+            content += f"\nFuente: {doc.metadata['source']}"
+        formatted_content.append(content)
+    
+    return "\n---\n".join(formatted_content)
+
 def process_context(knowledge_base, message_text):
     relevant_info = knowledge_base.query_knowledge(message_text)
+    docs_manager = DocumentationManager()
     
-    # Improve content prioritization
-    priority_keywords = [
-        'contract', 'token', 'erc20', 'dapp', 'builder', 
-        'template', 'swap', 'exchange', 'wallet', 'nft'
-    ]
+    platform_and_docs = docs_manager.find_relevant_docs(message_text, max_results=4)
     
-    # Classify documents by relevance
-    priority_docs = []
-    secondary_docs = []
+    platform_links = "\n\nDirect Links:\n"
+    doc_links = "\nRelated Documentation:\n"
     
-    for doc in relevant_info:
-        content_lower = doc.page_content.lower()
-        # Calculate score based on keywords
-        score = sum(2 for keyword in priority_keywords if keyword in content_lower)
-        # Add score for exact match with query
-        score += sum(3 for word in message_text.lower().split() if word in content_lower)
-        
-        if score > 2:
-            priority_docs.append((score, doc))
+    for doc in platform_and_docs:
+        if 'dexappbuilder.dexkit.com/admin' in doc.url:
+            platform_links += f"• [{doc.title}]({doc.url})\n"
         else:
-            secondary_docs.append((score, doc))
+            doc_links += f"• [{doc.title}]({doc.url})\n"
     
-    # Sort by score
-    priority_docs.sort(reverse=True)
-    secondary_docs.sort(reverse=True)
+    context = process_knowledge_base_results(relevant_info)
     
-    # Combine prioritized documents (maximum 5 documents)
-    ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
-    
-    return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
+    return f"{platform_links}{doc_links}\n\nRelevant Context:\n{context}"
 
 CHROMA_SETTINGS = Settings(
     anonymized_telemetry=False,
@@ -328,13 +323,11 @@ async def shutdown():
 def main():
     """Initialize and run the bot"""
     try:
-        # Initialize knowledge base
         knowledge_base.db = initialize_knowledge_base()
         if not knowledge_base.db:
             logging.error("Could not initialize knowledge base. Exiting...")
             sys.exit(1)
             
-        # Initialize Telegram bot
         global app
         app = Application.builder().token(os.getenv('TELEGRAM_BOT_TOKEN')).build()
         
@@ -342,7 +335,6 @@ def main():
             logging.error("TELEGRAM_BOT_TOKEN not found in environment variables")
             sys.exit(1)
             
-        # Add handlers
         app.add_handler(CommandHandler("start", start))
         app.add_handler(MessageHandler(
             filters.TEXT & ~filters.COMMAND,
