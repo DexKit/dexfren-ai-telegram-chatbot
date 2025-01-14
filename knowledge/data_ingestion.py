@@ -37,10 +37,8 @@ class DexKitKnowledgeBase:
                 print(f"Error: File not found at {config_path}")
                 return {}
             
-            # Robust file reading
             with open(config_path, 'rb') as f:
                 content = f.read().decode('utf-8-sig').strip()
-                # Delete BOM
                 if content.startswith(u'\ufeff'):
                     content = content[1:]
                 print(f"First 100 characters of file: {content[:100]}")
@@ -78,11 +76,15 @@ class DexKitKnowledgeBase:
             return {}
         
     def get_video_id(self, url: str) -> str:
-        """Extract the video ID from a YouTube URL"""
-        video_id = url.split('/')[-1]
-        if 'watch?v=' in video_id:
-            video_id = video_id.split('watch?v=')[-1]
-        return video_id
+        """Extract video ID from YouTube URL"""
+        try:
+            if 'youtu.be' in url:
+                return url.split('/')[-1]
+            elif 'youtube.com' in url:
+                return url.split('v=')[1].split('&')[0]
+            return ''
+        except:
+            return ''
         
     def process_pdf(self, pdf_directory: str) -> List[Document]:
         """Process PDF files from a directory"""
@@ -105,26 +107,24 @@ class DexKitKnowledgeBase:
         return documents
         
     def process_youtube(self, video_url: str) -> List[Document]:
-        """Process a YouTube video using youtube_transcript_api"""
+        """Process a YouTube video with enhanced content extraction"""
         try:
             video_id = self.get_video_id(video_url)
             transcript_list = None
             
-            # Get video metadata
-            video_metadata = self.youtube_metadata.get(video_url, {})
+            video_metadata = self._get_enhanced_metadata(video_url)
             
-            # Simplified language priority - only try main languages
             for langs in [['en'], ['es']]:
                 try:
                     transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
                     break
-                except Exception:
+                except Exception as e:
                     continue
                     
             if not transcript_list:
-                print(f"Warning: No subtitles found for video: {video_metadata.get('title', video_url)}")
+                print(f"Warning: No subtitles found for: {video_metadata.get('title', video_url)}")
                 return []
-                
+            
             full_transcript = ' '.join([entry['text'] for entry in transcript_list])
             
             text_splitter = RecursiveCharacterTextSplitter(
@@ -133,24 +133,71 @@ class DexKitKnowledgeBase:
             )
             splits = text_splitter.split_text(full_transcript)
             
-            # Limit number of chunks per video to save tokens
-            splits = splits[:5]  # Only use first 5 chunks
-            
-            return [
-                Document(
+            documents = []
+            for i, split in enumerate(splits):
+                documents.append(Document(
                     page_content=split,
                     metadata={
                         'source': video_url,
                         'type': 'youtube',
                         'title': video_metadata.get('title', 'Unknown'),
-                        'category': video_metadata.get('category', 'General')
+                        'category': video_metadata.get('category', 'General'),
+                        'chunk_index': i,
+                        'total_chunks': len(splits)
                     }
-                ) for split in splits
-            ]
+                ))
             
+            return documents
+
         except Exception as e:
-            print(f"Warning: Could not process video {video_url}: {str(e)}")
+            print(f"❌ Error processing video {video_url}: {str(e)}")
             return []
+
+    def _process_transcript_segments(self, transcript_list: List[Dict]) -> List[Dict]:
+        """Process transcript into semantic segments"""
+        segments = []
+        current_segment = {
+            'content': '',
+            'timestamp': '',
+            'technical_terms': set()
+        }
+        
+        for entry in transcript_list:
+            if self._is_segment_boundary(entry['text']):
+                if current_segment['content']:
+                    current_segment['relevance_score'] = self._calculate_relevance(
+                        current_segment['content']
+                    )
+                    segments.append(current_segment)
+                    current_segment = {
+                        'content': '',
+                        'timestamp': '',
+                        'technical_terms': set()
+                    }
+            
+            current_segment['content'] += f" {entry['text']}"
+            current_segment['timestamp'] = entry['start']
+            
+        return segments
+
+    def _calculate_relevance(self, text: str) -> float:
+        """Calculate segment relevance"""
+        relevance_score = 0.0
+        technical_keywords = [
+            'dexkit', 'smart contract', 'token', 'blockchain',
+            'swap', 'liquidity', 'nft', 'wallet', 'gas fee'
+        ]
+        
+        for keyword in technical_keywords:
+            if keyword.lower() in text.lower():
+                relevance_score += 0.2
+                
+        irrelevant_phrases = ['subscribe', 'like', 'comment']
+        for phrase in irrelevant_phrases:
+            if phrase.lower() in text.lower():
+                relevance_score -= 0.1
+                
+        return min(max(relevance_score, 0.0), 1.0)
 
     def process_web_docs(self) -> List[Document]:
         """Process web documentation and platform pages"""
@@ -162,7 +209,6 @@ class DexKitKnowledgeBase:
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
-                # More aggressive content cleaning
                 for element in soup.find_all(['script', 'style', 'nav', 'footer', 'header', 'aside']):
                     element.decompose()
                 
@@ -172,8 +218,7 @@ class DexKitKnowledgeBase:
                 else:
                     text = soup.get_text(separator='\n', strip=True)
                 
-                # Limit content length
-                text = text[:5000]  # Only keep first 5000 characters
+                text = text[:5000]
                 
                 return {
                     'content': text,
@@ -210,38 +255,39 @@ class DexKitKnowledgeBase:
                 elif isinstance(value, dict):
                     process_urls_recursively(value, category or key, section or key)
         
-        # Process documentation URLs
         print("\nProcessing documentation pages...")
         process_urls_recursively(self.docs_metadata)
         
-        # Process platform URLs
         print("\nProcessing platform pages...")
         process_urls_recursively(self.platform_urls)
         
         return documents
 
-    def create_knowledge_base(self, pdf_directory: str = None, youtube_urls: List[str] = None):
-        """Create the knowledge base from PDFs, web docs and YouTube videos"""
+    def create_knowledge_base(self, pdf_directory: str = None, youtube_urls: List[str] = None, validation_callback = None):
+        """Create the knowledge base from PDFs and YouTube videos"""
         documents = []
         
-        # Process web documentation
         documents.extend(self.process_web_docs())
         
-        # Process PDFs if directory exists
         if pdf_directory:
             print("\nProcessing PDF documents...")
             documents.extend(self.process_pdf(pdf_directory))
         
-        # Process YouTube videos
         if youtube_urls:
             print(f"\nProcessing {len(youtube_urls)} videos...")
             for url in youtube_urls:
                 print(f"Processing video: {url}")
-                documents.extend(self.process_youtube(url))
+                video_docs = self.process_youtube(url)
+                documents.extend(video_docs)
+                
+                if validation_callback:
+                    validation_callback({
+                        'document_count': len(documents),
+                        'average_chunk_size': sum(len(doc.page_content) for doc in documents) / len(documents) if documents else 0
+                    })
         
         print(f"\nCreating vector knowledge base with {len(documents)} documents...")
         
-        # Create new Chroma instance with documents
         self.db = Chroma.from_documents(
             documents=documents,
             embedding=self.embeddings,
@@ -249,6 +295,7 @@ class DexKitKnowledgeBase:
         )
         
         print("Knowledge base created successfully!")
+        return True
 
     def query_knowledge(self, query: str, k: int = 3) -> List[Document]:
         """Query the knowledge base"""
@@ -257,3 +304,31 @@ class DexKitKnowledgeBase:
         
         results = self.db.similarity_search(query, k=k)
         return results
+
+    def _get_enhanced_metadata(self, video_url: str) -> dict:
+        """Get enhanced metadata for a YouTube video"""
+        try:
+            metadata = self.youtube_metadata.get(video_url, {})
+            
+            if not metadata:
+                metadata = {
+                    'url': video_url,
+                    'title': 'Unknown',
+                    'category': 'General',
+                    'priority': 3
+                }
+                
+                video_id = self.get_video_id(video_url)
+                if video_id:
+                    metadata['video_id'] = video_id
+            
+            return metadata
+            
+        except Exception as e:
+            print(f"Warning: Could not get enhanced metadata for {video_url}: {str(e)}")
+            return {
+                'url': video_url,
+                'title': 'Unknown',
+                'category': 'General',
+                'priority': 3
+            }

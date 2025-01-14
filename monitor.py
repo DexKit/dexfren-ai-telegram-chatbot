@@ -7,7 +7,6 @@ import shutil
 import logging
 from datetime import datetime
 
-# Configure logging
 logging.basicConfig(
     filename='bot_monitor.log',
     level=logging.INFO,
@@ -69,15 +68,13 @@ def main():
     while True:
         current_time = time.time()
         
-        # If the process does not exist or is not running
         if not is_process_running(bot_process):
-            # Avoid too frequent restarts
             if current_time - last_restart > 10:
                 logging.warning("Bot crashed, starting recovery...")
                 bot_process = restart_bot()
                 last_restart = current_time
         
-        time.sleep(10)  # Check every 10 seconds
+        time.sleep(10)
 
 if __name__ == "__main__":
     main() 

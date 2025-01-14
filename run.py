@@ -5,6 +5,7 @@ import os
 import signal
 import sys
 from dotenv import load_dotenv
+from ascii_art import DEXKIT_LOGO
 
 load_dotenv()
 
@@ -46,25 +47,18 @@ def cleanup(processes):
     print("✅ Services stopped correctly")
 
 def main():
-    print("""
-╔═══════════════════════════════════════╗
-║           DexFren AI Bot              ║
-║            Admin System               ║
-╚═══════════════════════════════════════╝
-    """)
+    print(DEXKIT_LOGO)
 
     if not check_environment():
         sys.exit(1)
 
     processes = []
     try:
-        # Start bot
         bot_process = run_bot()
         if bot_process:
             processes.append(bot_process)
-            time.sleep(2)  # Wait for bot to start
+            time.sleep(2)
         
-        # Start frontend
         frontend_process = run_frontend()
         if frontend_process:
             processes.append(frontend_process)
@@ -77,7 +71,6 @@ def main():
 📝 Press Ctrl+C to stop all services
         """)
 
-        # Keep the script running
         while all(p.poll() is None for p in processes):
             time.sleep(1)
 
