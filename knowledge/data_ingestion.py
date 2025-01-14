@@ -332,3 +332,23 @@ class DexKitKnowledgeBase:
                 'category': 'General',
                 'priority': 3
             }
+
+    def _prioritize_content(self, content_type: str, url: str) -> float:
+        """Prioritize content based on type and URL structure"""
+        base_score = 1.0
+        
+        if 'dexappbuilder.dexkit.com/admin' in url:
+            base_score = 3.0
+        elif 'dexappbuilder.dexkit.com' in url:
+            base_score = 2.5
+        elif 'docs.dexkit.com' in url:
+            base_score = 2.0
+        
+        content_multipliers = {
+            'platform': 1.5,
+            'quick_builder': 1.3,
+            'documentation': 1.0,
+            'tutorial': 0.8
+        }
+        
+        return base_score * content_multipliers.get(content_type, 1.0)

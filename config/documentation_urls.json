@@ -1,16 +1,25 @@
 {
   "dexappbuilder": {
     "base_url": "https://docs.dexkit.com/defi-products/dexappbuilder",
+    "type": "documentation",
+    "priority": 2,
     "sections": {
-      "main": "https://docs.dexkit.com/defi-products",
+      "main": {
+        "url": "https://docs.dexkit.com/defi-products",
+        "title": "DexAppBuilder Documentation",
+        "priority": 2
+      },
       "networks": "/available-networks",
-      "getting_started": "/creating-my-first-dapp",
+      "getting_started": {
+        "url": "/creating-my-first-dapp",
+        "title": "Getting Started Guide",
+        "priority": 2
+      },
       "templates": "/starting-with-templates",
       "management": {
         "base": "/managing-this-tool",
         "subsections": {
           "tokens": "/importing-tokens",
-          "domains": "/custom-domains",
           "teams": "/configuring-teams",
           "navbar": "/configuring-navbar",
           "sections": "/default-sections",

@@ -1,98 +1,116 @@
+from dataclasses import dataclass
+from typing import List, Dict, Set
 import json
 import os
-from typing import List, Dict
-from dataclasses import dataclass
-import requests
 
 @dataclass
 class DocReference:
     url: str
     title: str
-    description: str
+    description: str = ""
+    priority: int = 2
+    content_type: str = "documentation"
 
 class DocumentationManager:
-    def __init__(self, config_path: str = "config/documentation_urls.json"):
-        self.config_path = config_path
-        self.docs_map: Dict[str, DocReference] = {}
-        self.load_documentation()
-    
-    def load_documentation(self):
-        """Load documentation URLs from JSON config"""
-        if not os.path.exists(self.config_path):
-            raise FileNotFoundError(f"Documentation config not found at {self.config_path}")
-            
-        with open(self.config_path, 'r') as f:
-            self.config = json.load(f)
-            
-        # Flatten URLs but limit depth to save processing
-        self._flatten_urls(self.config, max_depth=2)
-    
-    def _flatten_urls(self, config: dict, prefix: str = "", current_depth: int = 0, max_depth: int = 2):
-        """Recursively flatten nested URL structure with depth limit"""
-        if current_depth >= max_depth:
-            return
-            
-        for key, value in config.items():
-            if isinstance(value, str) and key != "base_url":
-                if value.startswith("http"):
-                    full_url = value
-                else:
-                    base = config.get("base_url", prefix)
-                    full_url = base + value
-                
-                # Simplified metadata
-                self.docs_map[key] = DocReference(
-                    url=full_url,
-                    title=key.replace("_", " ").title(),
-                    description=""
-                )
-            elif isinstance(value, dict):
-                new_prefix = config.get("base_url", prefix)
-                self._flatten_urls(
-                    value, 
-                    new_prefix, 
-                    current_depth + 1, 
-                    max_depth
-                )
-    
+    def __init__(self):
+        self.platform_urls = self._load_json('config/platform_urls.json')
+        self.docs_urls = self._load_json('config/documentation_urls.json')
+        self.video_urls = self._load_json('config/youtube_videos.json')
+        
+    def _load_json(self, path: str) -> Dict:
+        """Load and validate JSON configuration file"""
+        if not os.path.exists(path):
+            print(f"Warning: Config file not found: {path}")
+            return {}
+        try:
+            with open(path, 'r', encoding='utf-8-sig') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading {path}: {str(e)}")
+            return {}
+
     def find_relevant_docs(self, query: str, max_results: int = 3) -> List[DocReference]:
-        """Find relevant documentation links for a given query with limit"""
+        """Find relevant documentation links and platform URLs"""
         relevant_docs = []
         query_terms = set(query.lower().split())
         
-        # Prioritize terms related to tokens/contracts
-        priority_terms = {'token', 'contract', 'erc20', 'deploy', 'create'}
-        has_priority = bool(query_terms & priority_terms)
+        platform_refs = self._get_platform_references(query_terms)
+        if platform_refs:
+            relevant_docs.extend(platform_refs)
         
-        scored_docs = []
-        for key, doc in self.docs_map.items():
-            key_terms = set(key.lower().split('_'))
-            intersection = query_terms & key_terms
-            if intersection:
-                # Higher weight if it contains priority terms
-                score = len(intersection) * (2 if has_priority and 
-                    any(term in key.lower() for term in priority_terms) else 1)
-                scored_docs.append((score, doc))
+        if len(relevant_docs) < max_results:
+            video_refs = self._find_relevant_videos(query_terms)
+            relevant_docs.extend(video_refs[:max_results - len(relevant_docs)])
         
-        # Sort by score
-        scored_docs.sort(reverse=True, key=lambda x: x[0])
-        relevant_docs = [doc for _, doc in scored_docs[:max_results]]
+        return relevant_docs[:max_results]
+
+    def _get_platform_references(self, query_terms: Set[str]) -> List[DocReference]:
+        """Get platform references based on query context"""
+        refs = []
+        admin_urls = self.platform_urls.get('products', {}).get('dexappbuilder', {}).get('dexkit-dexappbuilder-admin', {})
         
-        return relevant_docs
+        for key, url in admin_urls.items():
+            if isinstance(url, str) and self._is_url_relevant(key, query_terms):
+                refs.append(DocReference(
+                    url=url,
+                    title=self._generate_title(key),
+                    description=self._generate_description(key),
+                    priority=1,
+                    content_type="platform"
+                ))
+            elif isinstance(url, dict):
+                for subkey, suburl in url.items():
+                    if self._is_url_relevant(subkey, query_terms):
+                        refs.append(DocReference(
+                            url=suburl,
+                            title=self._generate_title(subkey),
+                            description=self._generate_description(subkey),
+                            priority=1,
+                            content_type="platform"
+                        ))
+        return refs
 
-    def get_url(self, key: str) -> str:
-        """Get URL by key"""
-        doc = self.docs_map.get(key)
-        return doc.url if doc else None 
+    def _is_url_relevant(self, key: str, query_terms: Set[str]) -> bool:
+        """Determine if a URL is relevant based on its key and query terms"""
+        key_terms = set(key.lower().replace('-', ' ').split())
+        return bool(key_terms & query_terms)
 
-    def validate_url(self, url: str) -> bool:
-        try:
-            response = requests.head(url)
-            return response.status_code == 200
-        except:
-            return False 
+    def _generate_title(self, key: str) -> str:
+        """Generate a human-readable title from a URL key"""
+        clean_key = key.replace('dexkit-dexappbuilder-admin-', '')
+        return clean_key.replace('-', ' ').title()
 
-    def reload_configuration(self):
-        """Reload configuration without restarting the bot"""
-        self.load_documentation()
-        self.create_knowledge_base() 
+    def _generate_description(self, key: str) -> str:
+        """Generate a description based on the URL key"""
+        if 'create' in key:
+            return "Create and deploy your DApp"
+        elif 'quick' in key:
+            return "Quick build options"
+        elif 'dashboard' in key:
+            return "Manage your DApps"
+        return "Platform access"
+
+    def _find_relevant_videos(self, query_terms: Set[str]) -> List[DocReference]:
+        """Find relevant videos based on query context"""
+        relevant_videos = []
+        
+        for category, data in self.video_urls.items():
+            if isinstance(data, dict):
+                for subcategory, videos in data.items():
+                    if isinstance(videos, list):
+                        for video in videos:
+                            if self._video_matches_query(video, query_terms):
+                                relevant_videos.append(DocReference(
+                                    url=video['url'],
+                                    title=video['title'],
+                                    description=f"Video tutorial - {video.get('category', 'general')}",
+                                    priority=2,
+                                    content_type="video"
+                                ))
+        
+        return sorted(relevant_videos, key=lambda x: x.priority)
+
+    def _video_matches_query(self, video: Dict, query_terms: Set[str]) -> bool:
+        """Check if a video matches the query terms"""
+        video_text = f"{video['title']} {video.get('category', '')}".lower()
+        return any(term in video_text for term in query_terms) 

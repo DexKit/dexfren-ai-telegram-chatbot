@@ -242,33 +242,38 @@ async def keep_typing(bot, chat_id):
     except asyncio.CancelledError:
         pass
 
+def process_knowledge_base_results(relevant_info):
+    """Process and format knowledge base results"""
+    if not relevant_info:
+        return "No relevant information found."
+    
+    formatted_content = []
+    for doc in relevant_info:
+        content = doc.page_content.strip()
+        if hasattr(doc.metadata, 'source'):
+            content += f"\nFuente: {doc.metadata['source']}"
+        formatted_content.append(content)
+    
+    return "\n---\n".join(formatted_content)
+
 def process_context(knowledge_base, message_text):
     relevant_info = knowledge_base.query_knowledge(message_text)
+    docs_manager = DocumentationManager()
     
-    priority_keywords = [
-        'contract', 'token', 'erc20', 'dapp', 'builder', 
-        'template', 'swap', 'exchange', 'wallet', 'nft'
-    ]
+    platform_and_docs = docs_manager.find_relevant_docs(message_text, max_results=4)
     
-    priority_docs = []
-    secondary_docs = []
+    platform_links = "\n\nDirect Links:\n"
+    doc_links = "\nRelated Documentation:\n"
     
-    for doc in relevant_info:
-        content_lower = doc.page_content.lower()
-        score = sum(2 for keyword in priority_keywords if keyword in content_lower)
-        score += sum(3 for word in message_text.lower().split() if word in content_lower)
-        
-        if score > 2:
-            priority_docs.append((score, doc))
+    for doc in platform_and_docs:
+        if 'dexappbuilder.dexkit.com/admin' in doc.url:
+            platform_links += f"• [{doc.title}]({doc.url})\n"
         else:
-            secondary_docs.append((score, doc))
+            doc_links += f"• [{doc.title}]({doc.url})\n"
     
-    priority_docs.sort(reverse=True)
-    secondary_docs.sort(reverse=True)
+    context = process_knowledge_base_results(relevant_info)
     
-    ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
-    
-    return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
+    return f"{platform_links}{doc_links}\n\nRelevant Context:\n{context}"
 
 CHROMA_SETTINGS = Settings(
     anonymized_telemetry=False,
