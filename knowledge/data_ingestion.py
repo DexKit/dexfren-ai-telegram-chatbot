@@ -11,6 +11,8 @@ from langchain.schema import Document
 from dotenv import load_dotenv
 from typing import List, Dict
 import re
+import logging
+from langchain_community.document_loaders import DirectoryLoader
 
 load_dotenv()
 
@@ -26,6 +28,8 @@ class DexKitKnowledgeBase:
         self.youtube_metadata = self._load_youtube_metadata()
         self.docs_metadata = self._load_docs_metadata()
         self.platform_urls = self._load_platform_urls()
+        self.docs_dir = 'docs'
+        self.logger = logging.getLogger('knowledge_base')
         
     def _load_youtube_metadata(self) -> Dict:
         """Load YouTube metadata from config file"""
@@ -98,12 +102,25 @@ class DexKitKnowledgeBase:
             if file.endswith('.pdf'):
                 try:
                     pdf_path = os.path.join(pdf_directory, file)
-                    loader = PyPDFLoader(pdf_path)
-                    documents.extend(loader.load())
-                    print(f"Processed PDF: {file}")
-                except Exception as e:
-                    print(f"Warning: Could not process PDF {file}: {str(e)}")
+                    print(f"Loading PDF: {pdf_path}")
                     
+                    loader = PyPDFLoader(pdf_path)
+                    pdf_docs = loader.load()
+                    
+                    text_splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=1000,
+                        chunk_overlap=200
+                    )
+                    
+                    split_docs = text_splitter.split_documents(pdf_docs)
+                    documents.extend(split_docs)
+                    
+                    print(f"✓ Processed PDF: {file} - Generated {len(split_docs)} chunks")
+                    
+                except Exception as e:
+                    print(f"❌ Error processing PDF {file}: {str(e)}")
+                    
+        print(f"\nTotal PDF documents processed: {len(documents)}")
         return documents
         
     def process_youtube(self, video_url: str) -> List[Document]:
@@ -297,12 +314,27 @@ class DexKitKnowledgeBase:
         print("Knowledge base created successfully!")
         return True
 
-    def query_knowledge(self, query: str, k: int = 3) -> List[Document]:
+    def query_knowledge(self, query: str, search_kwargs: dict = None) -> list:
         """Query the knowledge base"""
         if not self.db:
-            raise ValueError("Knowledge base not initialized")
+            self.logger.error("Knowledge base not initialized")
+            return []
+            
+        self.logger.info(f"Searching for information: {query}")
+
+        search_kwargs = search_kwargs or {"k": 4}
+        results = self.db.similarity_search(query, **search_kwargs)
         
-        results = self.db.similarity_search(query, k=k)
+        if not results:
+            self.logger.info("No exact matches found, expanding search...")
+            expanded_kwargs = {"k": 8}
+            results = self.db.similarity_search(query, **expanded_kwargs)
+            
+        for i, doc in enumerate(results):
+            self.logger.info(f"Result {i+1}:")
+            self.logger.info(f"Source: {doc.metadata.get('source', 'Unknown')}")
+            self.logger.info(f"Content: {doc.page_content[:200]}...")
+            
         return results
 
     def _get_enhanced_metadata(self, video_url: str) -> dict:
@@ -352,3 +384,56 @@ class DexKitKnowledgeBase:
         }
         
         return base_score * content_multipliers.get(content_type, 1.0)
+
+    def load_documents(self):
+        """load documents from docs directory"""
+        self.logger.info(f"Loading documents from {self.docs_dir}")
+        
+        if not os.path.exists(self.docs_dir):
+            self.logger.error(f"Directory {self.docs_dir} not found")
+            return []
+            
+        try:
+            loader = DirectoryLoader(
+                self.docs_dir,
+                glob="**/*.pdf",
+                loader_cls=PyPDFLoader,
+                show_progress=True
+            )
+            
+            documents = loader.load()
+            self.logger.info(f"Loaded {len(documents)} PDF documents")
+            
+            for doc in documents:
+                self.logger.info(f"Loaded document: {doc.metadata.get('source', 'Unknown')}")
+                
+            return documents
+            
+        except Exception as e:
+            self.logger.error(f"Error loading documents: {str(e)}", exc_info=True)
+            return []            
+    def initialize_knowledge_base(self):
+        """Initialize the knowledge base with the documents"""
+        documents = self.load_documents()
+        if not documents:
+            self.logger.error("No documents loaded")
+
+            return None
+            
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
+        
+        texts = text_splitter.split_documents(documents)
+        self.logger.info(f"Split into {len(texts)} text chunks")
+        
+        self.db = Chroma.from_documents(
+            documents=texts,
+            embedding=self.embeddings,
+            persist_directory='./knowledge_base'
+        )
+        
+        self.logger.info("Knowledge base initialized successfully")
+        return self.db

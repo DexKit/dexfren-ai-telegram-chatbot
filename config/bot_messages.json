@@ -1,0 +1,16 @@
+{
+  "welcome": {
+    "message": "Welcome, fren! 👋\n\nI can help you with:\n- Using DexAppBuilder\n- Creating your DAPP\n- Platform features and customization\n- Technical guidance\n\nHow can I assist you today?"
+  },
+  "errors": {
+    "general": "Oops! Something went wrong. Let me try that again!",
+    "kb_init": "Could not initialize knowledge base. Exiting...",
+    "token_missing": "TELEGRAM_BOT_TOKEN not found in environment variables",
+    "config_missing": "Configuration file not found at {path}"
+  },
+  "system": {
+    "conversation_prompt": "Remember to be specific and provide actionable steps.",
+    "question_format": "Question: {question}\nPlease provide a detailed and specific response.",
+    "startup": "Starting bot..."
+  }
+} 
