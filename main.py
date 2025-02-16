@@ -12,16 +12,9 @@ from chromadb.config import Settings
 import sys
 from typing import Optional
 import json
+from utils.logger import setup_logger
 
-# Logging configuration
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-
-load_dotenv()
-
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+logger = setup_logger()
 
 # Initialize Swarm and Knowledge Base
 client = Swarm()
@@ -33,107 +26,82 @@ active_conversations = {}
 # Initialize documentation manager
 docs_manager = DocumentationManager()
 
-# Define the DexKit agent
+def load_agent_config():
+    """Load agent configuration from JSON file"""
+    try:
+        config_path = os.path.join('config', 'agent_instructions.json')
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            
+        # Convert config to formatted instruction string
+        instructions = format_agent_instructions(config['instructions'])
+        
+        return {
+            'name': config['name'],
+            'model': config['model'],
+            'instructions': instructions
+        }
+    except Exception as e:
+        logging.error(f"Error loading agent config: {e}")
+        sys.exit(1)
+
+def format_agent_instructions(config):
+    """Format the JSON config into a structured instruction string"""
+    sections = []
+    
+    # Core behavior
+    sections.append("CORE BEHAVIOR:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['core_behavior'])])
+    
+    # URLs
+    sections.append("\nURL RULES (MANDATORY):")
+    sections.append("1. ONLY use URLs from this approved list:\n")
+    for category, urls in config['approved_urls'].items():
+        sections.append(f"\n{category.replace('_', ' ').title()}:")
+        if isinstance(urls, dict):
+            for name, url in urls.items():
+                if isinstance(url, dict):
+                    sections.append(f"• {name.replace('_', ' ').title()}:")
+                    for sub_name, sub_url in url.items():
+                        sections.append(f"  - {sub_name.replace('_', ' ').title()}: {sub_url}")
+                else:
+                    sections.append(f"• {name.replace('_', ' ').title()}: {url}")
+        else:
+            sections.append(f"• {urls}")
+    
+    # Networks
+    sections.append("\nAvailable Networks:")
+    sections.extend([f"• {network}" for network in config['available_networks']])
+    
+    # Token Creation Rules
+    sections.append("\nCRITICAL RULES FOR TOKEN CREATION:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['token_creation_rules'])])
+    
+    # Response Format
+    sections.append("\nRESPONSE FORMAT:")
+    sections.extend([f"{i+1}. {fmt}" for i, fmt in enumerate(config['response_format'])])
+    
+    # Formatting
+    sections.append("\nFORMATTING:")
+    for key, value in config['formatting'].items():
+        sections.append(f"• {key.replace('_', ' ').title()}: {value}")
+    
+    # Prohibited
+    sections.append("\nSTRICTLY PROHIBITED:")
+    sections.extend([f"• {item}" for item in config['prohibited']])
+    
+    # Social Media Rules
+    sections.append("\nSOCIAL MEDIA RULES:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['social_media_rules'])])
+    
+    return "\n".join(sections)
+
+# Initialize the agent with config
+agent_config = load_agent_config()
 dexkit_agent = Agent(
-    name="DexFren",
-    instructions="""
-    You are DexFren, DexKit's support assistant. Follow these rules STRICTLY:
-
-    CORE BEHAVIOR:
-    1. Use ONLY knowledge base info - NO external sources
-    2. If unsure, ask SPECIFIC clarifying questions about:
-       - Network being used
-       - Product version
-       - Current setup details
-    3. Keep responses focused and structured
-    4. Use detailed examples with actual configurations
-    5. Verify technical accuracy before responding
-
-    URL RULES (MANDATORY):
-    1. ONLY use URLs from this approved list:
-    
-    Documentation:
-    • Templates: docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates
-    • Getting Started: docs.dexkit.com/defi-products/dexappbuilder/creating-my-first-dapp
-    
-    DexGenerator & Contracts:
-    • Create Contract: dexappbuilder.dexkit.com/forms/contracts/create
-    • List Contracts: dexappbuilder.dexkit.com/forms/contracts/list
-    • Create Form: dexappbuilder.dexkit.com/forms/create
-    • Manage Forms: dexappbuilder.dexkit.com/forms/manage
-    
-    DApp Builder:
-    • Create: dexappbuilder.dexkit.com/admin/create
-    • Dashboard: dexappbuilder.dexkit.com/admin
-    • Quick Builders:
-      - Swap: dexappbuilder.dexkit.com/admin/quick-builder/swap
-      - Exchange: dexappbuilder.dexkit.com/admin/quick-builder/exchange
-      - Wallet: dexappbuilder.dexkit.com/admin/quick-builder/wallet
-      - NFT Store: dexappbuilder.dexkit.com/admin/quick-builder/nft-store
-    
-    Social:
-    • Discord: discord.com/invite/dexkit-official-943552525217435649
-    • Telegram: t.me/dexkit
-    • Twitter: x.com/dexkit
-    
-    Token:
-    • ETH: dexappbuilder.dexkit.com/token/buy/ethereum/kit
-    • BSC: dexappbuilder.dexkit.com/token/buy/bsc/kit
-    • MATIC: dexappbuilder.dexkit.com/token/buy/polygon/kit
-
-    Available Networks:
-    • Ethereum mainnet
-    • Ethereum sepolia testnet and Goerli
-    • BSC (Binance Smart Chain, now Binance Chain) mainnet and testnet
-    • Polygon (formerly Matic Network)
-    • Arbitrum
-    • Avalanche
-    • Optimism
-    • Fantom
-    • Base
-    • Blast
-    • Blast testnet
-    • Pulsechain (with some limitations)
-
-    CRITICAL RULES FOR TOKEN CREATION:
-    1. ALL token creation MUST be directed to: dexappbuilder.dexkit.com/forms/contracts/create
-    2. NEVER suggest token creation through admin panel
-    3. Token creation is ONLY available through DexGenerator contract forms
-    4. Always verify network compatibility before suggesting token creation
-    5. Include gas fee warnings for each network
-
-    RESPONSE FORMAT:
-    1. Start with direct, actionable answer
-    2. Include ONLY relevant approved URLs
-    3. Use clear, numbered steps
-    4. Provide specific configuration examples
-    5. End with next step suggestion and verification steps
-
-    FORMATTING:
-    • Links: [text](URL)
-    • Important: *text*
-    • Technical Details: _text_
-    • Configuration: `text`
-    • Network Names: **text**
-
-    STRICTLY PROHIBITED:
-    • External URLs or resources
-    • Unofficial or modified URLs
-    • Incorrect token creation paths
-    • Unsupported features
-    • Personal opinions
-    • Made-up information
-    • Incomplete URLs
-    • Assumptions about user setup
-    
-    SOCIAL MEDIA RULES:
-    1. ONLY use official social media links from platform_urls.json
-    2. NEVER modify or shorten social media URLs
-    3. When suggesting Discord, ALWAYS use the official invite link
-    4. Direct technical questions to documentation first
-    5. Use social media only for community engagement
-    """,
-    model="gpt-3.5-turbo"
+    name=agent_config['name'],
+    instructions=agent_config['instructions'],
+    model=agent_config['model']
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -151,7 +119,11 @@ How can I assist you today?
     await update.message.reply_text(welcome_message)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle incoming messages."""
     try:
+        # Log incoming message
+        logger.info(f"Message from {update.effective_user.username}: {update.message.text}")
+        
         # Check if message is in private chat or for the bot in groups
         is_private = update.message.chat.type == 'private'
         is_bot_mentioned = bool(update.message.entities and 
@@ -221,6 +193,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             typing_task.cancel()
             await asyncio.sleep(0.1)  # Small delay to ensure typing is cancelled
         
+        # Log outgoing message
+        logger.info(f"Response to {update.effective_user.username}: {bot_response}")
+        
         # Send message after typing is cancelled
         await update.message.reply_text(
             bot_response,
@@ -229,10 +204,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         
     except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        await update.message.reply_text(
-            "Oops! Something went wrong. Let me try that again!"
-        )
+        error_msg = f"Error processing message: {str(e)}"
+        logger.error(error_msg)
+        await update.message.reply_text("Lo siento, hubo un error procesando tu mensaje.")
 
 async def keep_typing(bot, chat_id):
     try:
@@ -357,8 +331,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
     main()

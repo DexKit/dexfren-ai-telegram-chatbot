@@ -1,83 +1,64 @@
+from utils.logger import setup_logger
+import psutil
 import os
 import time
-import subprocess
-import signal
-import sys
-import shutil
-import logging
-from datetime import datetime
+import threading
 
-# Configure logging
-logging.basicConfig(
-    filename='bot_monitor.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logger = setup_logger()
 
-def clean_cache():
-    """Clean cache and knowledge base"""
-    try:
-        directories = [
-            './knowledge_base',
-            './__pycache__',
-            './knowledge/__pycache__',
-            './frontend/__pycache__'
-        ]
-        
-        for directory in directories:
-            if os.path.exists(directory):
-                shutil.rmtree(directory)
-                logging.info(f"Cleaned directory: {directory}")
-    except Exception as e:
-        logging.error(f"Error cleaning cache: {str(e)}")
+class SystemMonitor:
+    def __init__(self):
+        self.running = False
+        self.monitor_thread = None
 
-def rebuild_knowledge_base():
-    """Rebuild knowledge base"""
-    try:
-        result = subprocess.run([sys.executable, 'build_knowledge_base.py'], 
-                              capture_output=True, 
-                              text=True)
-        if result.returncode == 0:
-            logging.info("Knowledge base rebuilt successfully")
-        else:
-            logging.error(f"Error rebuilding knowledge base: {result.stderr}")
-    except Exception as e:
-        logging.error(f"Error executing build_knowledge_base.py: {str(e)}")
+    def start_monitoring(self):
+        """Inicia el monitoreo en un hilo separado"""
+        self.running = True
+        self.monitor_thread = threading.Thread(target=self._monitor_loop)
+        self.monitor_thread.daemon = True
+        self.monitor_thread.start()
+        logger.info("System monitoring started")
 
-def is_process_running(process):
-    """Check if the process is running"""
-    if process is None:
-        return False
-    return process.poll() is None
+    def stop_monitoring(self):
+        """Detiene el monitoreo"""
+        self.running = False
+        if self.monitor_thread:
+            self.monitor_thread.join()
+        logger.info("System monitoring stopped")
 
-def restart_bot():
-    """Restart the bot completely"""
-    try:
-        clean_cache()
-        rebuild_knowledge_base()
-        process = subprocess.Popen([sys.executable, 'run.py'])
-        logging.info("Bot restarted successfully")
-        return process
-    except Exception as e:
-        logging.error(f"Error restarting bot: {str(e)}")
-        return None
+    def _monitor_loop(self):
+        """Loop principal de monitoreo"""
+        while self.running:
+            try:
+                # Monitor CPU y memoria
+                cpu_percent = psutil.cpu_percent(interval=1)
+                memory = psutil.virtual_memory()
+                
+                # Monitor procesos del bot
+                bot_processes = [p for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent']) 
+                               if 'python' in p.info['name'].lower()]
+                
+                # Monitor tamaño de la base de conocimientos
+                kb_size = 0
+                if os.path.exists('./knowledge_base'):
+                    kb_size = sum(
+                        os.path.getsize(os.path.join('./knowledge_base', f)) 
+                        for f in os.listdir('./knowledge_base')
+                    ) / (1024 * 1024)  # Convertir a MB
 
-def main():
-    bot_process = None
-    last_restart = 0
-    
-    while True:
-        current_time = time.time()
-        
-        # If the process does not exist or is not running
-        if not is_process_running(bot_process):
-            # Avoid too frequent restarts
-            if current_time - last_restart > 10:
-                logging.warning("Bot crashed, starting recovery...")
-                bot_process = restart_bot()
-                last_restart = current_time
-        
-        time.sleep(10)  # Check every 10 seconds
+                # Logging de métricas
+                logger.info(f"System Metrics:")
+                logger.info(f"├── CPU Usage: {cpu_percent}%")
+                logger.info(f"├── Memory Usage: {memory.percent}%")
+                logger.info(f"├── Knowledge Base Size: {kb_size:.2f} MB")
+                logger.info(f"└── Active Python Processes: {len(bot_processes)}")
 
-if __name__ == "__main__":
-    main() 
+                for proc in bot_processes:
+                    logger.info(f"    └── Process: {proc.info['name']} "
+                              f"(CPU: {proc.info['cpu_percent']}%, "
+                              f"Memory: {proc.info['memory_percent']:.1f}%)")
+
+            except Exception as e:
+                logger.error(f"Error in monitoring: {str(e)}")
+            
+            time.sleep(60)  # Actualizar cada minuto 
