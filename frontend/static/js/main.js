@@ -1,4 +1,3 @@
-// Document management functions
 async function uploadDocument(file) {
     const formData = new FormData();
     formData.append('file', file);
@@ -56,7 +55,6 @@ async function startTraining() {
         
         if (data.success) {
             showNotification('Training started successfully', 'success');
-            // Start polling for status
             pollTrainingStatus();
         } else {
             showNotification('Error starting training', 'error');
@@ -74,14 +72,12 @@ async function pollTrainingStatus() {
             const data = await response.json();
             
             if (data.success) {
-                // Update logs in the console
                 if (data.logs && data.logs.length > 0) {
                     data.logs.forEach(log => {
                         updateConsoleMessage(log);
                     });
                 }
                 
-                // If training is finished, stop polling
                 if (!data.is_training) {
                     clearInterval(pollInterval);
                     showNotification('Training completed', 'success');
@@ -91,10 +87,9 @@ async function pollTrainingStatus() {
             console.error('Error checking training status:', error);
             clearInterval(pollInterval);
         }
-    }, 2000); // Check every 2 seconds
+    }, 2000);
 }
 
-// Console management
 function updateConsoleMessage(message, type = 'INFO') {
     const console = document.getElementById('consoleOutput');
     if (console) {
@@ -107,7 +102,6 @@ function updateConsoleMessage(message, type = 'INFO') {
     }
 }
 
-// Notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg transform transition-all duration-300 z-50 ${
@@ -125,9 +119,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    // Document upload form
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
         uploadForm.addEventListener('submit', (e) => {
@@ -139,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // URL form
     const urlForm = document.getElementById('urlForm');
     if (urlForm) {
         urlForm.addEventListener('submit', (e) => {
@@ -152,13 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Training button
     const trainButton = document.getElementById('trainButton');
     if (trainButton) {
         trainButton.addEventListener('click', startTraining);
     }
 
-    // Initial console message
     updateConsoleMessage('System initialized');
     updateConsoleMessage('Ready to process documents and training requests');
 });

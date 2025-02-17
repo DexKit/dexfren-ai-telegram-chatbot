@@ -127,7 +127,6 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
         return;
     }
     
-    // Check file size before uploading (50MB)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
         showNotification(`File is too large. Maximum size is 50MB. Your file is ${(file.size / (1024*1024)).toFixed(2)}MB`, 'error');
@@ -138,7 +137,6 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     formData.append('file', file);
     
     try {
-        // Show loading state
         uploadButton.disabled = true;
         uploadButton.innerHTML = `
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -157,7 +155,6 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
         
         if (data.success) {
             showNotification('File uploaded successfully', 'success');
-            // Wait a moment before reloading to see the notification
             setTimeout(() => window.location.reload(), 1500);
         } else {
             showNotification(data.error || 'Error uploading file', 'error');
@@ -166,13 +163,11 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
         console.error('Error:', error);
         showNotification('Error uploading file. Please try again.', 'error');
     } finally {
-        // Restore the button
         uploadButton.disabled = false;
         uploadButton.innerHTML = originalButtonText;
     }
 });
 
-// Function to show notifications
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white transform transition-all duration-500 ease-in-out z-50 ${
@@ -202,10 +197,8 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // Animate entry
     setTimeout(() => notification.classList.add('translate-y-2'), 100);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         notification.classList.add('opacity-0');
         setTimeout(() => notification.remove(), 500);

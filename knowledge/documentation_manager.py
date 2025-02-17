@@ -24,7 +24,6 @@ class DocumentationManager:
         with open(self.config_path, 'r') as f:
             self.config = json.load(f)
             
-        # Flatten URLs but limit depth to save processing
         self._flatten_urls(self.config, max_depth=2)
     
     def _flatten_urls(self, config: dict, prefix: str = "", current_depth: int = 0, max_depth: int = 2):
@@ -40,7 +39,6 @@ class DocumentationManager:
                     base = config.get("base_url", prefix)
                     full_url = base + value
                 
-                # Simplified metadata
                 self.docs_map[key] = DocReference(
                     url=full_url,
                     title=key.replace("_", " ").title(),
@@ -60,7 +58,6 @@ class DocumentationManager:
         relevant_docs = []
         query_terms = set(query.lower().split())
         
-        # Prioritize terms related to tokens/contracts
         priority_terms = {'token', 'contract', 'erc20', 'deploy', 'create'}
         has_priority = bool(query_terms & priority_terms)
         
@@ -69,12 +66,10 @@ class DocumentationManager:
             key_terms = set(key.lower().split('_'))
             intersection = query_terms & key_terms
             if intersection:
-                # Higher weight if it contains priority terms
                 score = len(intersection) * (2 if has_priority and 
                     any(term in key.lower() for term in priority_terms) else 1)
                 scored_docs.append((score, doc))
         
-        # Sort by score
         scored_docs.sort(reverse=True, key=lambda x: x[0])
         relevant_docs = [doc for _, doc in scored_docs[:max_results]]
         

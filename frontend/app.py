@@ -6,19 +6,16 @@ import json
 from threading import Thread
 from datetime import datetime
 
-# Add root directory to path to import bot modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
   
 from build_knowledge_base import main as rebuild_kb
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
-# Ensure the docs directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Global variable for logs
 training_logs = []
 
 def count_videos_recursive(data):
@@ -31,25 +28,21 @@ def count_videos_recursive(data):
     
     def process_item(item, parent_key=None):
         nonlocal total
-        # Ignore the flat video_list
         if parent_key == 'video_list':
             return
             
         if isinstance(item, list):
-            # It's a list of videos
             total += len(item)
             for video in item:
                 if isinstance(video, dict):
                     if 'category' in video:
                         categories.add(video['category'])
         elif isinstance(item, dict):
-            # It's a dictionary of categories or subcategories
             for key, value in item.items():
-                if key != 'video_list':  # Ignore the flat video_list
+                if key != 'video_list':
                     categories.add(key)
                     process_item(value, key)
     
-    # Process only the tutorials section
     if 'tutorials' in data:
         process_item(data['tutorials'])
     
@@ -74,7 +67,6 @@ def check_new_content(last_training_time):
     
     has_new_content = False
     
-    # Check for new PDFs
     docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
     if os.path.exists(docs_dir):
         for file in os.listdir(docs_dir):
@@ -84,7 +76,6 @@ def check_new_content(last_training_time):
                     has_new_content = True
                     break
     
-    # Check for new videos
     videos_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'youtube_videos.json')
     if os.path.exists(videos_file) and datetime.fromtimestamp(os.path.getmtime(videos_file)) > last_training_time:
         has_new_content = True
@@ -101,7 +92,6 @@ def dashboard():
         'needs_training': False
     }
     
-    # Get PDF documents
     docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
     if os.path.exists(docs_dir):
         pdfs = [f for f in os.listdir(docs_dir) if f.endswith('.pdf')]
@@ -109,7 +99,6 @@ def dashboard():
         if pdfs:
             stats['categories'].add('documentation')
 
-    # Get YouTube videos and their categories
     videos_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'youtube_videos.json')
     if os.path.exists(videos_file):
         try:
@@ -126,7 +115,6 @@ def dashboard():
             import traceback
             print(traceback.format_exc())
     
-    # Get last training date
     kb_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'knowledge_base')
     if os.path.exists(kb_path):
         try:
@@ -141,11 +129,10 @@ def dashboard():
             print(f"Error getting last training date: {e}")
             stats['last_training'] = None
 
-    # Check if there's new content since the last training
     last_training_time = get_last_training_time()
     stats['needs_training'] = check_new_content(last_training_time)
     
-    print("Stats finales:", stats)  # Debug print
+    print("Stats finales:", stats)
 
     return render_template('dashboard.html', 
                          stats=stats, 
@@ -186,7 +173,6 @@ def get_training_status():
 @app.route('/docs')
 def documents():
     docs = []
-    # Get PDF documents
     docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
     if os.path.exists(docs_dir):
         for file in os.listdir(docs_dir):
@@ -196,7 +182,6 @@ def documents():
                     'type': 'pdf'
                 })
     
-    # Get YouTube videos
     videos_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'youtube_videos.json')
     if os.path.exists(videos_file):
         try:
@@ -207,7 +192,6 @@ def documents():
                     if isinstance(data, dict):
                         for category, content in data.items():
                             if isinstance(content, list):
-                                # It's a list of videos
                                 for video in content:
                                     if isinstance(video, dict) and 'url' in video:
                                         docs.append({
@@ -217,10 +201,8 @@ def documents():
                                             'category': parent_category or category
                                         })
                             elif isinstance(content, dict):
-                                # It's a category with subcategories
                                 process_videos(content, category)
                 
-                # Process the tutorials section
                 if 'tutorials' in videos_data:
                     process_videos(videos_data['tutorials'])
                 
@@ -229,24 +211,20 @@ def documents():
             import traceback
             print(traceback.format_exc())
 
-    # Sort documents: first PDFs, then videos, sorted alphabetically by name
     docs.sort(key=lambda x: (x['type'] != 'pdf', x['name'].lower()))
     
     return render_template('documents.html', documents=docs)
 
 @app.route('/training')
 def training():
-    # Check if there are documents
     has_documents = False
     docs_count = 0
     videos_count = 0
     
-    # Count PDFs
     docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
     if os.path.exists(docs_dir):
         docs_count = len([f for f in os.listdir(docs_dir) if f.endswith('.pdf')])
     
-    # Count videos
     videos_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'youtube_videos.json')
     if os.path.exists(videos_file):
         try:
@@ -259,11 +237,9 @@ def training():
     
     has_documents = (docs_count + videos_count) > 0
     
-    # Check if there's new content since the last training
     last_training_time = get_last_training_time()
     needs_training = check_new_content(last_training_time)
     
-    # Get training history
     history = []
     if last_training_time:
         history.append({
@@ -293,11 +269,9 @@ def upload_document():
         
         if file and file.filename.endswith('.pdf'):
             filename = secure_filename(file.filename)
-            # Ensure the docs directory exists
             docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
             os.makedirs(docs_dir, exist_ok=True)
             
-            # Save the file
             file_path = os.path.join(docs_dir, filename)
             file.save(file_path)
             

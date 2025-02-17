@@ -6,8 +6,8 @@ import os
 def clean_previous_training():
     """Clean previous training data but preserve docs and config"""
     directories_to_clean = [
-        './knowledge_base',  # Vector store
-        './__pycache__',    # Python cache
+        './knowledge_base',
+        './__pycache__',
         './knowledge/__pycache__'
     ]
     
@@ -38,18 +38,15 @@ def main():
     print("\n=== Starting DexKit Knowledge Base Creation (GPT-3.5) ===\n")
     
     try:
-        # Clean previous training
         clean_previous_training()
         
         print("\n=== Initializing new training ===\n")
         
-        # Initialize knowledge base with specific parameters
         knowledge_base = DexKitKnowledgeBase(
             chunk_size=500,
             chunk_overlap=50
         )
         
-        # Load YouTube URLs
         youtube_urls = load_youtube_urls()
         if not youtube_urls:
             print("Warning: No YouTube URLs loaded")
@@ -57,7 +54,6 @@ def main():
         print(f"\n=== Processing {len(youtube_urls)} videos ===")
         print("\n=== Processing documentation and platform pages ===")
         
-        # Create knowledge base
         knowledge_base.create_knowledge_base(
             pdf_directory="./docs" if os.path.exists("./docs") else None,
             youtube_urls=youtube_urls

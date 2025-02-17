@@ -10,7 +10,6 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from langchain.schema import Document
 from dotenv import load_dotenv
 from typing import List, Dict
-import re
 
 load_dotenv()
 
@@ -37,10 +36,8 @@ class DexKitKnowledgeBase:
                 print(f"Error: File not found at {config_path}")
                 return {}
             
-            # Robust file reading
             with open(config_path, 'rb') as f:
                 content = f.read().decode('utf-8-sig').strip()
-                # Delete BOM
                 if content.startswith(u'\ufeff'):
                     content = content[1:]
                 print(f"First 100 characters of file: {content[:100]}")
@@ -110,10 +107,8 @@ class DexKitKnowledgeBase:
             video_id = self.get_video_id(video_url)
             transcript_list = None
             
-            # Get video metadata
             video_metadata = self.youtube_metadata.get(video_url, {})
             
-            # Simplified language priority - only try main languages
             for langs in [['en'], ['es']]:
                 try:
                     transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
@@ -133,8 +128,7 @@ class DexKitKnowledgeBase:
             )
             splits = text_splitter.split_text(full_transcript)
             
-            # Limit number of chunks per video to save tokens
-            splits = splits[:5]  # Only use first 5 chunks
+            splits = splits[:5]
             
             return [
                 Document(
@@ -162,7 +156,6 @@ class DexKitKnowledgeBase:
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
-                # More aggressive content cleaning
                 for element in soup.find_all(['script', 'style', 'nav', 'footer', 'header', 'aside']):
                     element.decompose()
                 
@@ -172,8 +165,7 @@ class DexKitKnowledgeBase:
                 else:
                     text = soup.get_text(separator='\n', strip=True)
                 
-                # Limit content length
-                text = text[:5000]  # Only keep first 5000 characters
+                text = text[:5000]
                 
                 return {
                     'content': text,
@@ -210,11 +202,9 @@ class DexKitKnowledgeBase:
                 elif isinstance(value, dict):
                     process_urls_recursively(value, category or key, section or key)
         
-        # Process documentation URLs
         print("\nProcessing documentation pages...")
         process_urls_recursively(self.docs_metadata)
         
-        # Process platform URLs
         print("\nProcessing platform pages...")
         process_urls_recursively(self.platform_urls)
         
@@ -224,15 +214,12 @@ class DexKitKnowledgeBase:
         """Create the knowledge base from PDFs, web docs and YouTube videos"""
         documents = []
         
-        # Process web documentation
         documents.extend(self.process_web_docs())
         
-        # Process PDFs if directory exists
         if pdf_directory:
             print("\nProcessing PDF documents...")
             documents.extend(self.process_pdf(pdf_directory))
         
-        # Process YouTube videos
         if youtube_urls:
             print(f"\nProcessing {len(youtube_urls)} videos...")
             for url in youtube_urls:
@@ -241,7 +228,6 @@ class DexKitKnowledgeBase:
         
         print(f"\nCreating vector knowledge base with {len(documents)} documents...")
         
-        # Create new Chroma instance with documents
         self.db = Chroma.from_documents(
             documents=documents,
             embedding=self.embeddings,

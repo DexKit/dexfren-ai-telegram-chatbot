@@ -30,23 +30,19 @@ class SystemMonitor:
         """Loop principal de monitoreo"""
         while self.running:
             try:
-                # Monitor CPU y memoria
                 cpu_percent = psutil.cpu_percent(interval=1)
                 memory = psutil.virtual_memory()
                 
-                # Monitor procesos del bot
                 bot_processes = [p for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent']) 
                                if 'python' in p.info['name'].lower()]
                 
-                # Monitor tamaño de la base de conocimientos
                 kb_size = 0
                 if os.path.exists('./knowledge_base'):
                     kb_size = sum(
                         os.path.getsize(os.path.join('./knowledge_base', f)) 
                         for f in os.listdir('./knowledge_base')
-                    ) / (1024 * 1024)  # Convertir a MB
+                    ) / (1024 * 1024)
 
-                # Logging de métricas
                 logger.info(f"System Metrics:")
                 logger.info(f"├── CPU Usage: {cpu_percent}%")
                 logger.info(f"├── Memory Usage: {memory.percent}%")
@@ -61,4 +57,4 @@ class SystemMonitor:
             except Exception as e:
                 logger.error(f"Error in monitoring: {str(e)}")
             
-            time.sleep(60)  # Actualizar cada minuto 
+            time.sleep(60)

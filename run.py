@@ -1,7 +1,6 @@
 from utils.logger import setup_logger
 import subprocess
 import os
-import signal
 import sys
 from dotenv import load_dotenv
 from ascii_art import DEXKIT_LOGO
@@ -20,10 +19,10 @@ def run_bot():
         process = subprocess.Popen(
             [sys.executable, "main.py"],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # Redirigir stderr a stdout
+            stderr=subprocess.STDOUT,
             universal_newlines=True,
             bufsize=1,
-            env={**os.environ, 'PYTHONUNBUFFERED': '1'}  # Forzar salida sin buffer
+            env={**os.environ, 'PYTHONUNBUFFERED': '1'}
         )
         logger.info("✅ Bot started successfully")
         return process
@@ -70,7 +69,7 @@ def monitor_process_output(process, name):
                 break
             if line:
                 line = line.strip()
-                if line:  # Solo loguear si hay contenido
+                if line:
                     if "ERROR" in line.upper():
                         logger.error(f"{name}: {line}")
                     else:
@@ -87,11 +86,9 @@ def main():
 
     processes = []
     try:
-        # Iniciar bot
         bot_process = run_bot()
         if bot_process:
             processes.append(bot_process)
-            # Monitor bot output in a separate thread
             bot_monitor = threading.Thread(
                 target=monitor_process_output,
                 args=(bot_process, "Bot"),
@@ -99,11 +96,9 @@ def main():
             )
             bot_monitor.start()
 
-        # Iniciar frontend
         frontend_process = run_frontend()
         if frontend_process:
             processes.append(frontend_process)
-            # Monitor frontend output in a separate thread
             frontend_monitor = threading.Thread(
                 target=monitor_process_output,
                 args=(frontend_process, "Frontend"),
@@ -111,12 +106,10 @@ def main():
             )
             frontend_monitor.start()
 
-        # Iniciar monitoreo del sistema
         system_monitor.start_monitoring()
 
-        # Mantener el script corriendo y procesar salida
         while all(p.poll() is None for p in processes):
-            time.sleep(0.1)  # Pequeña pausa para no consumir CPU
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         logger.info("\n⚡ Received interrupt signal")
