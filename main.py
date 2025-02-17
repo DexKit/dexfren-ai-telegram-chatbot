@@ -4,7 +4,6 @@ import logging
 import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from telegram.constants import ChatAction
 from swarm import Swarm, Agent
 from knowledge.data_ingestion import DexKitKnowledgeBase
 from langchain_chroma import Chroma
@@ -13,346 +12,268 @@ from chromadb.config import Settings
 import sys
 from typing import Optional
 import json
-import re
+from utils.logger import setup_logger
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logger = setup_logger()
 
-load_dotenv()
-
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-
+# Initialize Swarm and Knowledge Base
 client = Swarm()
 knowledge_base = DexKitKnowledgeBase()
 
+# Store active conversations
 active_conversations = {}
 
+# Initialize documentation manager
 docs_manager = DocumentationManager()
 
-def load_all_configs():
-    """Load all configuration files"""
-    base_config_path = 'config'
-    config_files = {
-        'agent': 'agent_instructions.json',
-        'documentation': 'documentation_urls.json',
-        'platform': 'platform_urls.json',
-        'youtube': 'youtube_videos.json',
-        'messages': 'bot_messages.json',
-        'settings': 'bot_settings.json'
-    }
-    
-    configs = {}
-    logger = logging.getLogger('main')
-    logger.info("Loading configuration files...")
-    
-    for key, filename in config_files.items():
-        path = os.path.join(base_config_path, filename)
-        logger.info(f"Loading {path}...")
-        
-        if not os.path.exists(path):
-            logger.error(f"Configuration file not found: {path}")
-            configs[key] = {}
-            continue
-            
-        try:
-            with open(path, 'r', encoding='utf-8-sig') as f:
-                configs[key] = json.load(f)
-                logger.info(f"Successfully loaded {filename}")
-                
-                if key == 'youtube':
-                    logger.info(f"Loaded {len(configs[key])} YouTube videos")
-                elif key == 'documentation':
-                    logger.info(f"Loaded {len(configs[key])} documentation sections")
-                elif key == 'platform':
-                    logger.info(f"Loaded {len(configs[key].get('products', {}))} platform products")
-                
-        except UnicodeError:
-            with open(path, 'r', encoding='utf-8') as f:
-                configs[key] = json.load(f)
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON parsing error in {path}: {str(e)}")
-            configs[key] = {}
-        except Exception as e:
-            logger.error(f"Error loading {path}: {str(e)}")
-            configs[key] = {}
-    
-    return configs
-
-def generate_documentation_urls(docs_config):
-    """Generate documentation URLs section from config"""
-    urls = []
-    
-    for product, data in docs_config.items():
-        if 'base_url' in data and 'sections' in data:
-            urls.append(f"{product.upper()}:")
-            for section_name, section_data in data['sections'].items():
-                if isinstance(section_data, str):
-                    url = f"{data['base_url']}{section_data}"
-                    urls.append(f"• {section_name.replace('_', ' ').title()}: {url}")
-                elif isinstance(section_data, dict) and 'url' in section_data:
-                    url = data['base_url'] + section_data['url'] if section_data['url'].startswith('/') else section_data['url']
-                    urls.append(f"• {section_data.get('title', section_name.replace('_', ' ').title())}: {url}")
-    
-    return "\n".join(urls)
-
-def generate_platform_urls(platform_config):
-    """Generate platform URLs section from config"""
-    urls = ["DApp Builder URLs:"]
-    
-    admin_urls = platform_config.get('products', {}).get('dexappbuilder', {}).get('dexkit-dexappbuilder-admin', {})
-    if admin_urls:
-        for key, url in admin_urls.items():
-            if isinstance(url, str):
-                urls.append(f"• {key.replace('dexkit-dexappbuilder-admin-', '').replace('-', ' ').title()}: {url}")
-            elif isinstance(url, dict) and key == 'dexkit-dexappbuilder-admin-quick-builders':
-                urls.append("• Quick Builders:")
-                for qb_key, qb_url in url.items():
-                    builder_name = qb_key.replace('dexkit-dexappbuilder-admin-quick-builder-', '').title()
-                    urls.append(f"  - {builder_name}: {qb_url}")
-    
-    return "\n".join(urls)
-
-def generate_social_urls(platform_config):
-    """Generate social URLs section from config"""
-    social_urls = ["Social:"]
-    social_data = platform_config.get('social', {})
-    
-    for key, url in social_data.items():
-        platform = key.replace('dexkit-', '').title()
-        social_urls.append(f"• {platform}: {url}")
-    
-    return "\n".join(social_urls)
-
-def generate_token_urls(platform_config):
-    """Generate token URLs section from config"""
-    token_urls = ["Token:"]
-    token_data = platform_config.get('token', {}).get('buy', {})
-    
-    for key, url in token_data.items():
-        network = key.replace('dexkit-buy-', '').upper()
-        token_urls.append(f"• {network}: {url}")
-    
-    return "\n".join(token_urls)
-
-def load_agent_instructions(configs):
-    """Generate agent instructions from config files"""
-    agent_config = configs.get('agent', {})
-    
-    if not agent_config:
-        print("[X] Error: Agent configuration is empty")
-        return "Default instructions for DexFren"
-        
+def load_agent_config():
+    """Load agent configuration from JSON file"""
     try:
-        instructions = [
-            f"You are {agent_config['name']}, DexKit's support assistant. Follow these rules STRICTLY:\n",
-            "\nCORE BEHAVIOR:",
-            *[f"{i+1}. {rule}" for i, rule in enumerate(agent_config['core_behavior'])],
+        config_path = os.path.join('config', 'agent_instructions.json')
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
             
-            f"\n{generate_documentation_urls(configs['documentation'])}",
-            f"\n{generate_platform_urls(configs['platform'])}",
-            f"\n{generate_social_urls(configs['platform'])}",
-            f"\n{generate_token_urls(configs['platform'])}",
-            
-            "\nAvailable Networks:",
-            "Mainnets:",
-            *[f"• {network}" for network in agent_config['networks']['mainnets']],
-            "\nTestnets:",
-            *[f"• {network}" for network in agent_config['networks']['testnets']],
-            
-            "\nCRITICAL RULES FOR TOKEN CREATION:",
-            *[f"{i+1}. {rule}" for i, rule in enumerate(agent_config['token_creation_rules'])],
-            
-            "\nRESPONSE FORMAT:",
-            *[f"{i+1}. {fmt}" for i, fmt in enumerate(agent_config['response_format'])],
-            
-            "\nFORMATTING:",
-            *[f"• {key}: {value}" for key, value in agent_config['formatting'].items()],
-            
-            "\nSTRICTLY PROHIBITED:",
-            *[f"• {item}" for item in agent_config['prohibited']]
-        ]
+        # Convert config to formatted instruction string
+        instructions = format_agent_instructions(config['instructions'])
         
-        return "\n".join(instructions)
+        return {
+            'name': config['name'],
+            'model': config['model'],
+            'instructions': instructions
+        }
     except Exception as e:
-        print(f"[X] Error generating agent instructions: {str(e)}")
-        return "Default instructions for DexFren"
+        logging.error(f"Error loading agent config: {e}")
+        sys.exit(1)
 
-configs = load_all_configs()
-agent_instructions = load_agent_instructions(configs)
+def format_agent_instructions(config):
+    """Format the JSON config into a structured instruction string"""
+    sections = []
+    
+    # Core behavior
+    sections.append("CORE BEHAVIOR:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['core_behavior'])])
+    
+    # URLs
+    sections.append("\nURL RULES (MANDATORY):")
+    sections.append("1. ONLY use URLs from this approved list:\n")
+    for category, urls in config['approved_urls'].items():
+        sections.append(f"\n{category.replace('_', ' ').title()}:")
+        if isinstance(urls, dict):
+            for name, url in urls.items():
+                if isinstance(url, dict):
+                    sections.append(f"• {name.replace('_', ' ').title()}:")
+                    for sub_name, sub_url in url.items():
+                        sections.append(f"  - {sub_name.replace('_', ' ').title()}: {sub_url}")
+                else:
+                    sections.append(f"• {name.replace('_', ' ').title()}: {url}")
+        else:
+            sections.append(f"• {urls}")
+    
+    # Networks
+    sections.append("\nAvailable Networks:")
+    sections.extend([f"• {network}" for network in config['available_networks']])
+    
+    # Token Creation Rules
+    sections.append("\nCRITICAL RULES FOR TOKEN CREATION:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['token_creation_rules'])])
+    
+    # Response Format
+    sections.append("\nRESPONSE FORMAT:")
+    sections.extend([f"{i+1}. {fmt}" for i, fmt in enumerate(config['response_format'])])
+    
+    # Formatting
+    sections.append("\nFORMATTING:")
+    for key, value in config['formatting'].items():
+        sections.append(f"• {key.replace('_', ' ').title()}: {value}")
+    
+    # Prohibited
+    sections.append("\nSTRICTLY PROHIBITED:")
+    sections.extend([f"• {item}" for item in config['prohibited']])
+    
+    # Social Media Rules
+    sections.append("\nSOCIAL MEDIA RULES:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['social_media_rules'])])
+    
+    return "\n".join(sections)
 
+# Initialize the agent with config
+agent_config = load_agent_config()
 dexkit_agent = Agent(
-    name="DexFren",
-    instructions=agent_instructions,
-    model="gpt-3.5-turbo"
+    name=agent_config['name'],
+    instructions=agent_config['instructions'],
+    model=agent_config['model']
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(configs['messages']['welcome']['message'])
+    welcome_message = """
+Welcome, fren! 👋
 
-def initialize_logging(config):
-    log_config = config.get('logging', {})
-    log_format = log_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    log_level = getattr(logging, log_config.get('level', 'INFO'))
-    
-    # Limpiar handlers existentes
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-    
-    # Configurar el logger principal
-    logging.basicConfig(
-        format=log_format,
-        level=log_level,
-        handlers=[
-            logging.FileHandler('bot.log', encoding='utf-8'),
-            logging.StreamHandler(sys.stdout)  # Usar stdout en lugar de stderr
-        ]
-    )
-    
-    logging.getLogger('httpx').setLevel(logging.WARNING)
-    logging.getLogger('telegram').setLevel(logging.INFO)
+I can help you with:
+- Using DexAppBuilder
+- Creating your DAPP
+- Platform features and customization
+- Technical guidance
 
-async def keep_typing(bot, chat_id):
-    """Keep typing indicator active"""
-    try:
-        while True:
-            await bot.send_chat_action(
-                chat_id=chat_id,
-                action=ChatAction.TYPING
-            )
-            await asyncio.sleep(3)
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        logger.error(f"Error in keep_typing: {str(e)}")
-
-def format_telegram_message(text: str) -> str:
-    """Format text for Telegram MarkdownV2"""
-    special_chars = '_*[]()~`>#+-=|{}.!'
-    
-    url_pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
-    urls = re.findall(url_pattern, text)
-    
-    for title, url in urls:
-        old = f'[{title}]({url})'
-        escaped_url = url.replace('.', r'\.')
-        new = f'[{title}]({escaped_url})'
-        text = text.replace(old, new)
-    
-    result = ""
-    in_url = False
-    for char in text:
-        if char == '[':
-            in_url = True
-            result += char
-        elif char == ']':
-            in_url = False
-            result += char
-        elif char in special_chars and not in_url:
-            result += f'\\{char}'
-        else:
-            result += char
-            
-    return result
+How can I assist you today?
+    """
+    await update.message.reply_text(welcome_message)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle incoming messages."""
     try:
+        # Log incoming message
+        logger.info(f"Message from {update.effective_user.username}: {update.message.text}")
+        
+        # Check if message is in private chat or for the bot in groups
+        is_private = update.message.chat.type == 'private'
+        is_bot_mentioned = bool(update.message.entities and 
+            any(entity.type == 'mention' and 
+                context.bot.username in update.message.text[entity.offset:entity.offset + entity.length] 
+                for entity in update.message.entities))
+        is_reply_to_bot = bool(update.message.reply_to_message and 
+            update.message.reply_to_message.from_user.id == context.bot.id)
+        
+        # Process if private chat OR bot is mentioned/replied to in groups
+        if not (is_private or is_bot_mentioned or is_reply_to_bot):
+            return
+            
         chat_id = update.message.chat_id
         message_text = update.message.text
-        logger = logging.getLogger('telegram.bot')
+        
+        # Start typing only when we know we'll respond
+        await context.bot.send_chat_action(
+            chat_id=chat_id,
+            action="typing"
+        )
+        
+        if chat_id not in active_conversations:
+            active_conversations[chat_id] = []
+            
+        active_conversations[chat_id].append({
+            "role": "user",
+            "content": message_text
+        })
+        
+        relevant_info = knowledge_base.query_knowledge(message_text)
+        context_text = "\n".join([doc.page_content for doc in relevant_info])
+        
+        # Improve conversation context
+        conversation = [
+            {"role": "system", "content": f"{dexkit_agent.instructions}\n\n{context_text}"},
+            {"role": "system", "content": "Remember to be specific and provide actionable steps."}
+        ]
+        
+        # Add context from last 3 interactions for better continuity
+        if len(active_conversations[chat_id]) > 1:
+            conversation.extend(active_conversations[chat_id][-6:])
+        
+        # Add current message
+        conversation.append({
+            "role": "user",
+            "content": f"Question: {message_text}\nPlease provide a detailed and specific response."
+        })
         
         typing_task = asyncio.create_task(keep_typing(context.bot, chat_id))
         
         try:
-            configs = load_all_configs()
-            platform_urls = configs.get('platform', {})
-            
-            format_instructions = """
-            Answer in a concise and direct manner.
-            Use this format:
-            *bold* for important titles and concepts
-            _italic_ for emphasis
-            [text](URL) for links
-            `code` for configurations
-            
-
-            DO NOT include HTML code or iframes.
-            DO NOT include long answers.
-            ALWAYS include the relevant platform links.
-            """
-            
-            messages = [
-                {"role": "system", "content": format_instructions},
-                {"role": "system", "content": f"URLs disponibles: {json.dumps(platform_urls, indent=2)}"},
-                {"role": "user", "content": message_text}
-            ]
-            
             response = client.run(
                 agent=dexkit_agent,
-                messages=messages,
+                messages=conversation,
                 stream=False
             )
             
             bot_response = response.messages[-1]["content"]
+            active_conversations[chat_id].append({
+                "role": "assistant",
+                "content": bot_response
+            })
             
         finally:
+            # Cancel typing before sending message
             typing_task.cancel()
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)  # Small delay to ensure typing is cancelled
         
+        # Log outgoing message
+        logger.info(f"Response to {update.effective_user.username}: {bot_response}")
+        
+        # Send message after typing is cancelled
         await update.message.reply_text(
             bot_response,
+            reply_to_message_id=update.message.message_id,
             parse_mode='Markdown'
         )
         
     except Exception as e:
-        logger.error(f"Error in handle_message: {e}", exc_info=True)
-        await update.message.reply_text(
-            "Sorry, an error occurred. Please try again."
-        )
+        error_msg = f"Error processing message: {str(e)}"
+        logger.error(error_msg)
+        await update.message.reply_text("Lo siento, hubo un error procesando tu mensaje.")
 
-def process_knowledge_base_results(relevant_info):
-    """Process and format knowledge base results"""
-    if not relevant_info:
-        return None
-    
-    formatted_content = []
-    for doc in relevant_info:
-        content = doc.page_content.strip()
-        source = doc.metadata.get('source', 'Unknown source')
-        formatted_content.append(f"From {source}:\n{content}")
-    
-    return "\n\n".join(formatted_content)
+async def keep_typing(bot, chat_id):
+    try:
+        while True:
+            await bot.send_chat_action(
+                chat_id=chat_id,
+                action="typing"
+            )
+            # Reduced sleep time to keep typing indicator more consistent
+            await asyncio.sleep(3)
+    except asyncio.CancelledError:
+        pass
 
 def process_context(knowledge_base, message_text):
     relevant_info = knowledge_base.query_knowledge(message_text)
-    docs_manager = DocumentationManager()
     
-    platform_and_docs = docs_manager.find_relevant_docs(message_text, max_results=4)
+    # Improve content prioritization
+    priority_keywords = [
+        'contract', 'token', 'erc20', 'dapp', 'builder', 
+        'template', 'swap', 'exchange', 'wallet', 'nft'
+    ]
     
-    platform_links = "\n\nDirect Links:\n"
-    doc_links = "\nRelated Documentation:\n"
+    # Classify documents by relevance
+    priority_docs = []
+    secondary_docs = []
     
-    for doc in platform_and_docs:
-        if 'dexappbuilder.dexkit.com/admin' in doc.url:
-            platform_links += f"• [{doc.title}]({doc.url})\n"
+    for doc in relevant_info:
+        content_lower = doc.page_content.lower()
+        # Calculate score based on keywords
+        score = sum(2 for keyword in priority_keywords if keyword in content_lower)
+        # Add score for exact match with query
+        score += sum(3 for word in message_text.lower().split() if word in content_lower)
+        
+        if score > 2:
+            priority_docs.append((score, doc))
         else:
-            doc_links += f"• [{doc.title}]({doc.url})\n"
+            secondary_docs.append((score, doc))
     
-    context = process_knowledge_base_results(relevant_info)
+    # Sort by score
+    priority_docs.sort(reverse=True)
+    secondary_docs.sort(reverse=True)
     
-    return f"{platform_links}{doc_links}\n\nRelevant Context:\n{context}"
+    # Combine prioritized documents (maximum 5 documents)
+    ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
+    
+    return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
+
+CHROMA_SETTINGS = Settings(
+    anonymized_telemetry=False,
+    allow_reset=True
+)
+
+def ensure_knowledge_base_directory():
+    kb_dir = "./knowledge_base"
+    if not os.path.exists(kb_dir):
+        os.makedirs(kb_dir)
+        print(f"Created knowledge base directory: {kb_dir}")
+    return kb_dir
 
 def initialize_knowledge_base() -> Optional[Chroma]:
+    """Initialize the knowledge base with proper error handling"""
     try:
-        kb_dir = configs['settings']['knowledge_base']['directory']
-        if not os.path.exists(kb_dir):
-            os.makedirs(kb_dir)
-        
+        kb_dir = ensure_knowledge_base_directory()
         return Chroma(
             persist_directory=kb_dir,
             embedding_function=knowledge_base.embeddings,
-            client_settings=Settings(**configs['settings']['knowledge_base']['chroma_settings'])
+            client_settings=CHROMA_SETTINGS
         )
     except Exception as e:
         logging.error(f"Failed to initialize knowledge base: {e}")
@@ -379,33 +300,30 @@ async def shutdown():
     print("Bot stopped gracefully")
 
 def main():
+    """Initialize and run the bot"""
     try:
-        logging.basicConfig(
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler('bot.log', encoding='utf-8'),
-                logging.StreamHandler()
-            ]
-        )
-        logger = logging.getLogger('main')
-        logger.info("Configuration loaded")
-        
-        logger.info("Starting bot...")
-        logger.info("Initializing knowledge base...")
-        if not knowledge_base.create_knowledge_base():
-            logger.error("Could not initialize knowledge base")
-            return
-
+        # Initialize knowledge base
+        knowledge_base.db = initialize_knowledge_base()
+        if not knowledge_base.db:
+            logging.error("Could not initialize knowledge base. Exiting...")
+            sys.exit(1)
+            
+        # Initialize Telegram bot
         global app
-        logger.info("Building Telegram application...")
         app = Application.builder().token(os.getenv('TELEGRAM_BOT_TOKEN')).build()
         
-        logger.info("Adding handlers...")
+        if not os.getenv('TELEGRAM_BOT_TOKEN'):
+            logging.error("TELEGRAM_BOT_TOKEN not found in environment variables")
+            sys.exit(1)
+            
+        # Add handlers
         app.add_handler(CommandHandler("start", start))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        app.add_handler(MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            handle_message
+        ))
         
-        logger.info("Starting polling...")
+        print("Starting bot...")
         app.run_polling(allowed_updates=Update.ALL_TYPES)
         
     except Exception as e:
@@ -413,17 +331,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    if sys.platform == 'win32':
-        import codecs
-        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
-        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
-    
-    print("Starting configuration...")
-    configs = load_all_configs()
-    
-    initialize_logging(configs['settings'])
-    logger = logging.getLogger('main')
-    
-    logger.info("Configuration loaded")
-    logger.info("Starting bot...")
     main()

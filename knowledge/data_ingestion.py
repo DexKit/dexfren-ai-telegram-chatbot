@@ -11,8 +11,6 @@ from langchain.schema import Document
 from dotenv import load_dotenv
 from typing import List, Dict
 import re
-import logging
-from langchain_community.document_loaders import DirectoryLoader
 
 load_dotenv()
 
@@ -28,8 +26,6 @@ class DexKitKnowledgeBase:
         self.youtube_metadata = self._load_youtube_metadata()
         self.docs_metadata = self._load_docs_metadata()
         self.platform_urls = self._load_platform_urls()
-        self.docs_dir = 'docs'
-        self.logger = logging.getLogger('knowledge_base')
         
     def _load_youtube_metadata(self) -> Dict:
         """Load YouTube metadata from config file"""
@@ -41,8 +37,10 @@ class DexKitKnowledgeBase:
                 print(f"Error: File not found at {config_path}")
                 return {}
             
+            # Robust file reading
             with open(config_path, 'rb') as f:
                 content = f.read().decode('utf-8-sig').strip()
+                # Delete BOM
                 if content.startswith(u'\ufeff'):
                     content = content[1:]
                 print(f"First 100 characters of file: {content[:100]}")
@@ -80,15 +78,11 @@ class DexKitKnowledgeBase:
             return {}
         
     def get_video_id(self, url: str) -> str:
-        """Extract video ID from YouTube URL"""
-        try:
-            if 'youtu.be' in url:
-                return url.split('/')[-1]
-            elif 'youtube.com' in url:
-                return url.split('v=')[1].split('&')[0]
-            return ''
-        except:
-            return ''
+        """Extract the video ID from a YouTube URL"""
+        video_id = url.split('/')[-1]
+        if 'watch?v=' in video_id:
+            video_id = video_id.split('watch?v=')[-1]
+        return video_id
         
     def process_pdf(self, pdf_directory: str) -> List[Document]:
         """Process PDF files from a directory"""
@@ -102,46 +96,35 @@ class DexKitKnowledgeBase:
             if file.endswith('.pdf'):
                 try:
                     pdf_path = os.path.join(pdf_directory, file)
-                    print(f"Loading PDF: {pdf_path}")
-                    
                     loader = PyPDFLoader(pdf_path)
-                    pdf_docs = loader.load()
-                    
-                    text_splitter = RecursiveCharacterTextSplitter(
-                        chunk_size=1000,
-                        chunk_overlap=200
-                    )
-                    
-                    split_docs = text_splitter.split_documents(pdf_docs)
-                    documents.extend(split_docs)
-                    
-                    print(f"✓ Processed PDF: {file} - Generated {len(split_docs)} chunks")
-                    
+                    documents.extend(loader.load())
+                    print(f"Processed PDF: {file}")
                 except Exception as e:
-                    print(f"❌ Error processing PDF {file}: {str(e)}")
+                    print(f"Warning: Could not process PDF {file}: {str(e)}")
                     
-        print(f"\nTotal PDF documents processed: {len(documents)}")
         return documents
         
     def process_youtube(self, video_url: str) -> List[Document]:
-        """Process a YouTube video with enhanced content extraction"""
+        """Process a YouTube video using youtube_transcript_api"""
         try:
             video_id = self.get_video_id(video_url)
             transcript_list = None
             
-            video_metadata = self._get_enhanced_metadata(video_url)
+            # Get video metadata
+            video_metadata = self.youtube_metadata.get(video_url, {})
             
+            # Simplified language priority - only try main languages
             for langs in [['en'], ['es']]:
                 try:
                     transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
                     break
-                except Exception as e:
+                except Exception:
                     continue
                     
             if not transcript_list:
-                print(f"Warning: No subtitles found for: {video_metadata.get('title', video_url)}")
+                print(f"Warning: No subtitles found for video: {video_metadata.get('title', video_url)}")
                 return []
-            
+                
             full_transcript = ' '.join([entry['text'] for entry in transcript_list])
             
             text_splitter = RecursiveCharacterTextSplitter(
@@ -150,71 +133,24 @@ class DexKitKnowledgeBase:
             )
             splits = text_splitter.split_text(full_transcript)
             
-            documents = []
-            for i, split in enumerate(splits):
-                documents.append(Document(
+            # Limit number of chunks per video to save tokens
+            splits = splits[:5]  # Only use first 5 chunks
+            
+            return [
+                Document(
                     page_content=split,
                     metadata={
                         'source': video_url,
                         'type': 'youtube',
                         'title': video_metadata.get('title', 'Unknown'),
-                        'category': video_metadata.get('category', 'General'),
-                        'chunk_index': i,
-                        'total_chunks': len(splits)
+                        'category': video_metadata.get('category', 'General')
                     }
-                ))
+                ) for split in splits
+            ]
             
-            return documents
-
         except Exception as e:
-            print(f"❌ Error processing video {video_url}: {str(e)}")
+            print(f"Warning: Could not process video {video_url}: {str(e)}")
             return []
-
-    def _process_transcript_segments(self, transcript_list: List[Dict]) -> List[Dict]:
-        """Process transcript into semantic segments"""
-        segments = []
-        current_segment = {
-            'content': '',
-            'timestamp': '',
-            'technical_terms': set()
-        }
-        
-        for entry in transcript_list:
-            if self._is_segment_boundary(entry['text']):
-                if current_segment['content']:
-                    current_segment['relevance_score'] = self._calculate_relevance(
-                        current_segment['content']
-                    )
-                    segments.append(current_segment)
-                    current_segment = {
-                        'content': '',
-                        'timestamp': '',
-                        'technical_terms': set()
-                    }
-            
-            current_segment['content'] += f" {entry['text']}"
-            current_segment['timestamp'] = entry['start']
-            
-        return segments
-
-    def _calculate_relevance(self, text: str) -> float:
-        """Calculate segment relevance"""
-        relevance_score = 0.0
-        technical_keywords = [
-            'dexkit', 'smart contract', 'token', 'blockchain',
-            'swap', 'liquidity', 'nft', 'wallet', 'gas fee'
-        ]
-        
-        for keyword in technical_keywords:
-            if keyword.lower() in text.lower():
-                relevance_score += 0.2
-                
-        irrelevant_phrases = ['subscribe', 'like', 'comment']
-        for phrase in irrelevant_phrases:
-            if phrase.lower() in text.lower():
-                relevance_score -= 0.1
-                
-        return min(max(relevance_score, 0.0), 1.0)
 
     def process_web_docs(self) -> List[Document]:
         """Process web documentation and platform pages"""
@@ -226,6 +162,7 @@ class DexKitKnowledgeBase:
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
+                # More aggressive content cleaning
                 for element in soup.find_all(['script', 'style', 'nav', 'footer', 'header', 'aside']):
                     element.decompose()
                 
@@ -235,7 +172,8 @@ class DexKitKnowledgeBase:
                 else:
                     text = soup.get_text(separator='\n', strip=True)
                 
-                text = text[:5000]
+                # Limit content length
+                text = text[:5000]  # Only keep first 5000 characters
                 
                 return {
                     'content': text,
@@ -272,39 +210,38 @@ class DexKitKnowledgeBase:
                 elif isinstance(value, dict):
                     process_urls_recursively(value, category or key, section or key)
         
+        # Process documentation URLs
         print("\nProcessing documentation pages...")
         process_urls_recursively(self.docs_metadata)
         
+        # Process platform URLs
         print("\nProcessing platform pages...")
         process_urls_recursively(self.platform_urls)
         
         return documents
 
-    def create_knowledge_base(self, pdf_directory: str = None, youtube_urls: List[str] = None, validation_callback = None):
-        """Create the knowledge base from PDFs and YouTube videos"""
+    def create_knowledge_base(self, pdf_directory: str = None, youtube_urls: List[str] = None):
+        """Create the knowledge base from PDFs, web docs and YouTube videos"""
         documents = []
         
+        # Process web documentation
         documents.extend(self.process_web_docs())
         
+        # Process PDFs if directory exists
         if pdf_directory:
             print("\nProcessing PDF documents...")
             documents.extend(self.process_pdf(pdf_directory))
         
+        # Process YouTube videos
         if youtube_urls:
             print(f"\nProcessing {len(youtube_urls)} videos...")
             for url in youtube_urls:
                 print(f"Processing video: {url}")
-                video_docs = self.process_youtube(url)
-                documents.extend(video_docs)
-                
-                if validation_callback:
-                    validation_callback({
-                        'document_count': len(documents),
-                        'average_chunk_size': sum(len(doc.page_content) for doc in documents) / len(documents) if documents else 0
-                    })
+                documents.extend(self.process_youtube(url))
         
         print(f"\nCreating vector knowledge base with {len(documents)} documents...")
         
+        # Create new Chroma instance with documents
         self.db = Chroma.from_documents(
             documents=documents,
             embedding=self.embeddings,
@@ -312,128 +249,11 @@ class DexKitKnowledgeBase:
         )
         
         print("Knowledge base created successfully!")
-        return True
 
-    def query_knowledge(self, query: str, search_kwargs: dict = None) -> list:
+    def query_knowledge(self, query: str, k: int = 3) -> List[Document]:
         """Query the knowledge base"""
         if not self.db:
-            self.logger.error("Knowledge base not initialized")
-            return []
-            
-        self.logger.info(f"Searching for information: {query}")
-
-        search_kwargs = search_kwargs or {"k": 4}
-        results = self.db.similarity_search(query, **search_kwargs)
+            raise ValueError("Knowledge base not initialized")
         
-        if not results:
-            self.logger.info("No exact matches found, expanding search...")
-            expanded_kwargs = {"k": 8}
-            results = self.db.similarity_search(query, **expanded_kwargs)
-            
-        for i, doc in enumerate(results):
-            self.logger.info(f"Result {i+1}:")
-            self.logger.info(f"Source: {doc.metadata.get('source', 'Unknown')}")
-            self.logger.info(f"Content: {doc.page_content[:200]}...")
-            
+        results = self.db.similarity_search(query, k=k)
         return results
-
-    def _get_enhanced_metadata(self, video_url: str) -> dict:
-        """Get enhanced metadata for a YouTube video"""
-        try:
-            metadata = self.youtube_metadata.get(video_url, {})
-            
-            if not metadata:
-                metadata = {
-                    'url': video_url,
-                    'title': 'Unknown',
-                    'category': 'General',
-                    'priority': 3
-                }
-                
-                video_id = self.get_video_id(video_url)
-                if video_id:
-                    metadata['video_id'] = video_id
-            
-            return metadata
-            
-        except Exception as e:
-            print(f"Warning: Could not get enhanced metadata for {video_url}: {str(e)}")
-            return {
-                'url': video_url,
-                'title': 'Unknown',
-                'category': 'General',
-                'priority': 3
-            }
-
-    def _prioritize_content(self, content_type: str, url: str) -> float:
-        """Prioritize content based on type and URL structure"""
-        base_score = 1.0
-        
-        if 'dexappbuilder.dexkit.com/admin' in url:
-            base_score = 3.0
-        elif 'dexappbuilder.dexkit.com' in url:
-            base_score = 2.5
-        elif 'docs.dexkit.com' in url:
-            base_score = 2.0
-        
-        content_multipliers = {
-            'platform': 1.5,
-            'quick_builder': 1.3,
-            'documentation': 1.0,
-            'tutorial': 0.8
-        }
-        
-        return base_score * content_multipliers.get(content_type, 1.0)
-
-    def load_documents(self):
-        """load documents from docs directory"""
-        self.logger.info(f"Loading documents from {self.docs_dir}")
-        
-        if not os.path.exists(self.docs_dir):
-            self.logger.error(f"Directory {self.docs_dir} not found")
-            return []
-            
-        try:
-            loader = DirectoryLoader(
-                self.docs_dir,
-                glob="**/*.pdf",
-                loader_cls=PyPDFLoader,
-                show_progress=True
-            )
-            
-            documents = loader.load()
-            self.logger.info(f"Loaded {len(documents)} PDF documents")
-            
-            for doc in documents:
-                self.logger.info(f"Loaded document: {doc.metadata.get('source', 'Unknown')}")
-                
-            return documents
-            
-        except Exception as e:
-            self.logger.error(f"Error loading documents: {str(e)}", exc_info=True)
-            return []            
-    def initialize_knowledge_base(self):
-        """Initialize the knowledge base with the documents"""
-        documents = self.load_documents()
-        if not documents:
-            self.logger.error("No documents loaded")
-
-            return None
-            
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len
-        )
-        
-        texts = text_splitter.split_documents(documents)
-        self.logger.info(f"Split into {len(texts)} text chunks")
-        
-        self.db = Chroma.from_documents(
-            documents=texts,
-            embedding=self.embeddings,
-            persist_directory='./knowledge_base'
-        )
-        
-        self.logger.info("Knowledge base initialized successfully")
-        return self.db
