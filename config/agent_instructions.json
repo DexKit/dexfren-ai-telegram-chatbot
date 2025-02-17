@@ -3,10 +3,9 @@
   "model": "gpt-3.5-turbo",
   "instructions": {
     "core_behavior": [
-      "Use ONLY knowledge base info - NO external sources",
+      "Use ONLY knowledge base info - STRICTLY NO external sources",
       "If unsure, ask SPECIFIC clarifying questions about:",
       "- Network being used",
-      "- Product version",
       "- Current setup details",
       "Keep responses focused and structured",
       "Use detailed examples with actual configurations",
@@ -15,7 +14,8 @@
     "approved_urls": {
       "documentation": {
         "templates": "docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates",
-        "getting_started": "docs.dexkit.com/defi-products/dexappbuilder/creating-my-first-dapp"
+        "getting_started": "docs.dexkit.com/defi-products/dexappbuilder/creating-my-first-dapp",
+        "general_docs": "use only SPECIFIC links from documentation_urls.json if user ask for docs about SPECIFIC topics"
       },
       "dexgenerator_contracts": {
         "create": "dexappbuilder.dexkit.com/forms/contracts/create",

@@ -5,66 +5,269 @@
         {
           "url": "https://youtu.be/pvzGTxcebW4",
           "title": "Tutorial | Configure your custom domain to your DApp made with DexAppBuilder",
+          "description": "Learn how to set up and configure a custom domain for your DApp. Complete guide covering DNS configuration, Vercel integration, and domain validation.",
           "category": "configuration",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["domain", "custom domain", "vercel", "dns", "deployment", "configuration", "setup"],
+          "duration": "10:15",
+          "published_date": "2023-05-20",
+          "language": "en",
+          "difficulty": "beginner",
+          "topics": ["domain-setup", "deployment", "configuration"],
+          "prerequisites": ["dexappbuilder-basics"],
+          "related_docs": [
+            "/defi-products/dexappbuilder/custom-domains",
+            "/defi-products/dexappbuilder/managing-this-tool"
+          ]
         },
         {
           "url": "https://youtu.be/U9NuKoqdFxk",
           "title": "Donate crypto to DexAppBuilder at Gitcoin's GG22 Quadratic Round",
+          "description": "Learn about supporting DexAppBuilder through Gitcoin's quadratic funding round and understand the importance of community contributions.",
           "category": "basics",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["gitcoin", "donation", "community", "funding", "support"],
+          "duration": "5:45",
+          "published_date": "2022-12-15",
+          "language": "en",
+          "difficulty": "beginner",
+          "topics": ["community", "funding", "support"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/overview"
+          ]
         }
       ],
       "features": [
         {
           "url": "https://youtu.be/Z6v4xBG6TtQ",
           "title": "Tutorial | Set up leaderboards and gamify your DApp built with DexAppBuilder",
+          "description": "Learn to implement gamification features including leaderboards in your DApp. Complete guide to engagement strategies.",
           "category": "advanced",
-          "priority": 2
+          "priority": 2,
+          "keywords": ["leaderboard", "gamification", "engagement", "rewards", "competition"],
+          "duration": "20:15",
+          "published_date": "2023-11-10",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["gamification", "user-engagement", "leaderboards"],
+          "prerequisites": ["dexappbuilder-basics"],
+          "related_docs": [
+            "/defi-products/dexappbuilder/leaderboards",
+            "/defi-products/dexappbuilder/features"
+          ]
         },
         {
           "url": "https://youtu.be/5TVhUmg-sbc",
           "title": "Tutorial | Set up your Multi-Level Marketing (MLM) links and start earning with DexAppBuilder",
+          "description": "Complete guide to implementing MLM referral systems in your DApp. Learn about commission structures and tracking.",
           "category": "advanced",
-          "priority": 2
+          "priority": 2,
+          "keywords": ["mlm", "referral", "marketing", "commission", "earnings"],
+          "duration": "17:30",
+          "published_date": "2023-10-15",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["mlm-setup", "referral-system", "earnings"],
+          "prerequisites": ["dexappbuilder-basics"],
+          "related_docs": [
+            "/defi-products/dexappbuilder/features",
+            "/defi-products/dexappbuilder/managing-this-tool"
+          ]
+        },
+        {
+          "url": "https://youtu.be/eexn_26EBJA",
+          "title": "Tutorial | How to create a token with DexAppBuilder",
+          "description": "Step-by-step guide for token creation using DexAppBuilder platform",
+          "category": "token",
+          "priority": 1,
+          "keywords": ["token", "creation", "dexappbuilder", "tutorial"],
+          "duration": "12:30",
+          "published_date": "2023-06-20",
+          "language": "en",
+          "difficulty": "beginner",
+          "topics": ["token-creation", "basic-setup"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexgenerator/token",
+            "/defi-products/dexgenerator/thirdweb-contracts/token"
+          ]
+        },
+        {
+          "url": "https://youtu.be/36pmIP7qvg8",
+          "title": "Tutorial | How to create a NFT collection with DexAppBuilder",
+          "description": "Guide to creating and managing NFT collections in DexAppBuilder",
+          "category": "nft",
+          "priority": 1,
+          "keywords": ["nft", "collection", "creation", "dexappbuilder"],
+          "duration": "15:45",
+          "published_date": "2023-07-01",
+          "language": "en",
+          "difficulty": "beginner",
+          "topics": ["nft-creation", "collection-management"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexgenerator/nft-collection",
+            "/defi-products/dexgenerator/creating-my-first-nft-collection"
+          ]
+        },
+        {
+          "url": "https://youtu.be/fXppwjRqVpM",
+          "title": "Tutorial | How to create a Swap DApp with DexAppBuilder",
+          "description": "Complete guide for creating a swap application using DexAppBuilder",
+          "category": "defi",
+          "priority": 1,
+          "keywords": ["swap", "dapp", "creation", "dexappbuilder", "defi"],
+          "duration": "16:20",
+          "published_date": "2023-07-15",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["swap-creation", "dapp-setup"],
+          "prerequisites": ["basic-defi-knowledge"],
+          "related_docs": [
+            "/defi-products/dexexchangepro/overview",
+            "/defi-products/dexexchangepro/deployment"
+          ]
+        },
+        {
+          "url": "https://youtu.be/dx_2PU6JRlw",
+          "title": "Tutorial | How to create a DEX with DexAppBuilder",
+          "description": "Step-by-step tutorial for creating a decentralized exchange",
+          "category": "defi",
+          "priority": 1,
+          "keywords": ["dex", "exchange", "creation", "dexappbuilder"],
+          "duration": "18:45",
+          "published_date": "2023-08-01",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["dex-creation", "exchange-setup"],
+          "prerequisites": ["defi-basics"],
+          "related_docs": [
+            "/defi-products/dexappbuilder/dex-creation"
+          ]
+        },
+        {
+          "url": "https://youtu.be/rXSekAW4YD4",
+          "title": "Tutorial | How to create a Wallet DApp with DexAppBuilder",
+          "description": "Guide for creating a wallet application using DexAppBuilder",
+          "category": "wallet",
+          "priority": 1,
+          "keywords": ["wallet", "dapp", "creation", "dexappbuilder"],
+          "duration": "14:30",
+          "published_date": "2023-08-15",
+          "language": "en",
+          "difficulty": "beginner",
+          "topics": ["wallet-creation", "dapp-setup"],
+          "prerequisites": ["web3-basics"],
+          "related_docs": [
+            "/defi-products/dexwallet/overview",
+            "/defi-products/dexwallet/creating-my-first-wallet"
+          ]
         }
       ],
       "updates": [
         {
           "url": "https://youtu.be/gqpGiA04qIU",
           "title": "DexAppBuilder update v.0.22.0 highlights",
+          "description": "Overview of the latest features and improvements in DexAppBuilder v0.22.0. Includes new functionality and performance enhancements.",
           "category": "updates",
-          "priority": 3
+          "priority": 3,
+          "keywords": ["update", "new features", "version", "changelog", "improvements"],
+          "duration": "8:30",
+          "published_date": "2023-12-01",
+          "language": "en",
+          "difficulty": "all-levels",
+          "topics": ["version-updates", "new-features", "improvements"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/changelog",
+            "/defi-products/dexappbuilder/features"
+          ]
         },
         {
           "url": "https://youtu.be/z-IGYnsXCtQ",
           "title": "DexAppBuilder update v.0.21.0 highlights",
+          "description": "Overview of version 0.21.0 updates and new features in DexAppBuilder",
           "category": "updates",
-          "priority": 3
+          "priority": 3,
+          "keywords": ["update", "version", "features", "changelog", "v0.21.0"],
+          "duration": "8:45",
+          "published_date": "2023-10-15",
+          "language": "en",
+          "difficulty": "all-levels",
+          "topics": ["version-updates", "features"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/overview"
+          ]
         },
         {
           "url": "https://youtu.be/UIpAsOQtVi8",
           "title": "DexAppBuilder update v.0.20.0 highlights",
+          "description": "Overview of version 0.20.0 updates and new features in DexAppBuilder",
           "category": "updates",
-          "priority": 3
+          "priority": 3,
+          "keywords": ["update", "version", "features", "changelog", "v0.20.0"],
+          "duration": "7:30",
+          "published_date": "2023-09-20",
+          "language": "en",
+          "difficulty": "all-levels",
+          "topics": ["version-updates", "features"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/changelog"
+          ]
         },
         {
           "url": "https://youtu.be/X7TCt0VCv20",
           "title": "DexAppBuilder update v.0.19.0 highlights",
+          "description": "Overview of version 0.19.0 updates and new features in DexAppBuilder",
           "category": "updates",
-          "priority": 3
+          "priority": 3,
+          "keywords": ["update", "version", "features", "changelog", "v0.19.0"],
+          "duration": "9:15",
+          "published_date": "2023-08-25",
+          "language": "en",
+          "difficulty": "all-levels",
+          "topics": ["version-updates", "features"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/changelog"
+          ]
         },
         {
           "url": "https://youtu.be/R4O3mL_ZTi4",
           "title": "DexAppBuilder update v.0.18.0 highlights",
+          "description": "Overview of version 0.18.0 updates and new features in DexAppBuilder",
           "category": "updates",
-          "priority": 3
+          "priority": 3,
+          "keywords": ["update", "version", "features", "changelog", "v0.18.0"],
+          "duration": "8:30",
+          "published_date": "2023-08-01",
+          "language": "en",
+          "difficulty": "all-levels",
+          "topics": ["version-updates", "features"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/changelog"
+          ]
         },
         {
           "url": "https://youtu.be/A8Kl_20hZDU",
           "title": "DexAppBuilder update v.0.17.0 highlights",
+          "description": "Overview of version 0.17.0 updates and new features in DexAppBuilder",
           "category": "updates",
-          "priority": 3
+          "priority": 3,
+          "keywords": ["update", "version", "features", "changelog", "v0.17.0"],
+          "duration": "7:45",
+          "published_date": "2023-07-15",
+          "language": "en",
+          "difficulty": "all-levels",
+          "topics": ["version-updates", "features"],
+          "prerequisites": [],
+          "related_docs": [
+            "/defi-products/dexappbuilder/changelog"
+          ]
         }
       ]
     },
@@ -73,28 +276,76 @@
         {
           "url": "https://youtu.be/cK10-fd4eGM",
           "title": "Tutorial | Create meme token app & deploy liquidity pool on Uniswap w/ DexGenerator + DexAppBuilder",
+          "description": "Complete guide to creating a meme token and setting up liquidity pools on Uniswap using DexKit's tools.",
           "category": "defi",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["meme token", "uniswap", "liquidity pool", "token creation", "dexgenerator"],
+          "duration": "22:15",
+          "published_date": "2023-10-01",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["token-creation", "liquidity-pools", "uniswap-integration"],
+          "prerequisites": ["web3-basics", "metamask-setup"],
+          "related_docs": [
+            "/defi-products/dexgenerator/token",
+            "/defi-products/dexgenerator/thirdweb-contracts/token"
+          ]
         },
         {
           "url": "https://youtu.be/f5KRmhEW4aw",
           "title": "Tutorial | Create your ERC20 meme token without a single line of code using DexAppBuilder",
+          "description": "Step-by-step guide to creating an ERC20 token without coding. Covers token configuration and deployment.",
           "category": "defi",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["erc20", "token creation", "no-code", "meme token", "deployment"],
+          "duration": "15:30",
+          "published_date": "2023-09-20",
+          "language": "en",
+          "difficulty": "beginner",
+          "topics": ["token-creation", "erc20-standard", "no-code-development"],
+          "prerequisites": ["metamask-setup"],
+          "related_docs": [
+            "/defi-products/dexgenerator/token",
+            "/defi-products/dexgenerator/requirements"
+          ]
         },
         {
           "url": "https://youtu.be/4Ex-wV8DWgk",
           "title": "Tutorial | Creating an ERC20 Token on Optimism network with DexAppBuilder",
+          "description": "Complete guide to creating and deploying ERC20 tokens on Optimism network. Includes gas optimization and network-specific considerations.",
           "category": "defi",
-          "priority": 2
+          "priority": 2,
+          "keywords": ["erc20", "optimism", "token creation", "deployment", "layer2"],
+          "duration": "16:45",
+          "published_date": "2023-11-20",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["token-creation", "optimism-network", "erc20-deployment"],
+          "prerequisites": ["web3-basics", "optimism-wallet-setup"],
+          "related_docs": [
+            "/defi-products/dexgenerator/token",
+            "/defi-products/dexgenerator/thirdweb-contracts/token"
+          ]
         }
       ],
       "dex_and_swap": [
         {
           "url": "https://youtu.be/4ShlkaUDQms",
           "title": "Tutorial | Create your own branded Decentralized Exchange with DexAppBuilder and 0x API",
+          "description": "Comprehensive guide to building a branded DEX using DexAppBuilder and 0x Protocol.",
           "category": "defi",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["dex", "0x protocol", "exchange", "branding", "api integration"],
+          "duration": "25:45",
+          "published_date": "2023-11-15",
+          "language": "en",
+          "difficulty": "advanced",
+          "topics": ["dex-creation", "0x-integration", "branding"],
+          "prerequisites": ["web3-basics", "dexappbuilder-basics"],
+          "related_docs": [
+            "/defi-products/dexexchangepro/overview",
+            "/defi-products/dexexchangepro/deploying-this-product"
+          ]
         },
         {
           "url": "https://youtu.be/42EV5wDH-l4",
@@ -127,14 +378,38 @@
         {
           "url": "https://youtu.be/Oo3agVVp0NM",
           "title": "Tutorial | Clona un mercado de NFTs desde una plantilla en DexAppBuilder",
+          "description": "Tutorial paso a paso para crear tu propio marketplace de NFTs utilizando las plantillas predefinidas de DexAppBuilder. Incluye configuración inicial y personalización.",
           "category": "nft",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["nft", "marketplace", "template", "clonar", "plantilla", "mercado"],
+          "duration": "15:20",
+          "published_date": "2023-08-10",
+          "language": "es",
+          "difficulty": "beginner",
+          "topics": ["nft-marketplace", "templates", "customization"],
+          "prerequisites": ["basic-web3"],
+          "related_docs": [
+            "/defi-products/dexnftstore/overview",
+            "/defi-products/dexnftstore/creating-my-first-store"
+          ]
         },
         {
           "url": "https://youtu.be/FuFtQRrbcM4",
           "title": "Tutorial | Despliega y aloja en Vercel tu propio mercado de NFTs con DexKit",
+          "description": "Guía completa de despliegue de tu marketplace de NFTs en Vercel. Incluye configuración de dominio y optimización.",
           "category": "nft",
-          "priority": 1
+          "priority": 1,
+          "keywords": ["vercel", "deployment", "nft", "marketplace", "hosting", "dominio"],
+          "duration": "18:45",
+          "published_date": "2023-09-15",
+          "language": "es",
+          "difficulty": "intermediate",
+          "topics": ["deployment", "hosting", "domain-setup"],
+          "prerequisites": ["nft-marketplace-basics", "vercel-account"],
+          "related_docs": [
+            "/defi-products/dexnftstore/overview",
+            "/defi-products/dexnftstore/managing-this-tool"
+          ]
         }
       ],
       "creation_and_minting": [
@@ -152,9 +427,21 @@
         },
         {
           "url": "https://youtu.be/dx_2PU6JRlw",
-          "title": "Tutorial | Creating your first NFT collection on Optimism network with DexAppBuilder",
+          "title": "Tutorial | Create and deploy NFT collection with DexAppBuilder",
+          "description": "Step-by-step guide to creating and deploying NFT collections using ThirdWeb integration.",
           "category": "nft",
-          "priority": 2
+          "priority": 2,
+          "keywords": ["nft", "collection", "thirdweb", "deployment", "creation"],
+          "duration": "19:30",
+          "published_date": "2023-10-25",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["nft-creation", "collection-deployment", "thirdweb-integration"],
+          "prerequisites": ["nft-basics", "web3-wallet"],
+          "related_docs": [
+            "/defi-products/dexgenerator/thirdweb-contracts/nft-collection",
+            "/defi-products/dexgenerator/creating-my-first-nft-collection"
+          ]
         },
         {
           "url": "https://youtu.be/rXSekAW4YD4",
@@ -191,52 +478,40 @@
       ],
       "marketplace_setup": [
         {
-          "url": "https://youtu.be/UHPY3CIx6G4",
-          "title": "Creating your first NFT Marketplace. Step 1",
-          "category": "nft",
-          "priority": 1
+          "url": "https://youtu.be/UIpAsOQtVi8",
+          "title": "Tutorial | Create your own NFT marketplace with DexAppBuilder",
+          "description": "Comprehensive guide to setting up a custom NFT marketplace. Includes marketplace configuration, fee structure, and customization options.",
+          "category": "marketplace",
+          "priority": 1,
+          "keywords": ["nft", "marketplace", "setup", "configuration", "customization", "fees"],
+          "duration": "23:15",
+          "published_date": "2023-11-15",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["marketplace-creation", "fee-setup", "customization"],
+          "prerequisites": ["web3-basics", "dexappbuilder-basics"],
+          "related_docs": [
+            "/defi-products/dexappbuilder/nft-marketplace",
+            "/defi-products/dexappbuilder/managing-this-tool"
+          ]
         },
         {
-          "url": "https://youtu.be/oXzV9TzKEbo",
-          "title": "Setting up General section building your NFT marketplace. Step 2",
-          "category": "nft",
-          "priority": 1
-        },
-        {
-          "url": "https://youtu.be/5BHWywnBhhA",
-          "title": "Setting up theme colors for your NFT marketplace. Step 3",
-          "category": "nft",
-          "priority": 1
-        },
-        {
-          "url": "https://youtu.be/1s99232FoNA",
-          "title": "Configure default page layout for your NFT marketplace. Step 4",
-          "category": "nft",
-          "priority": 1
-        },
-        {
-          "url": "https://youtu.be/M0vnoVX6rwg",
-          "title": "Building a custom page section for your NFT marketplace. Step 5",
-          "category": "nft",
-          "priority": 1
-        },
-        {
-          "url": "https://youtu.be/ppKPqthUTLs",
-          "title": "Setting up your NFT marketplace fees. Step 6",
-          "category": "nft",
-          "priority": 1
-        },
-        {
-          "url": "https://youtu.be/GpFpBxPHbcA",
-          "title": "Setting up collections and tokens in your NFT marketplace. Step 7",
-          "category": "nft",
-          "priority": 1
-        },
-        {
-          "url": "https://youtu.be/aL7apwnXNZs",
-          "title": "Setting up a custom domain. Step 8 (last)",
-          "category": "nft",
-          "priority": 1
+          "url": "https://youtu.be/X7TCt0VCv20",
+          "title": "Tutorial | How to create a marketplace for your NFT collection",
+          "description": "Detailed walkthrough for creating a dedicated marketplace for specific NFT collections. Covers collection integration and marketplace features.",
+          "category": "marketplace",
+          "priority": 1,
+          "keywords": ["nft", "collection", "marketplace", "integration", "setup"],
+          "duration": "20:45",
+          "published_date": "2023-12-01",
+          "language": "en",
+          "difficulty": "intermediate",
+          "topics": ["collection-marketplace", "integration", "setup"],
+          "prerequisites": ["nft-collection-basics"],
+          "related_docs": [
+            "/defi-products/dexnftstore/creating-my-first-store",
+            "/defi-products/dexnftstore/managing-this-tool"
+          ]
         }
       ]
     },
@@ -244,8 +519,20 @@
       {
         "url": "https://youtu.be/Uhu0VipVBzE",
         "title": "Tutorial | How to airdrop crypto without coding using DexAppBuilder",
+        "description": "Complete guide to creating and managing airdrops without coding knowledge. Includes token distribution strategies and best practices.",
         "category": "features",
-        "priority": 2
+        "priority": 2,
+        "keywords": ["airdrop", "token distribution", "no-code", "crypto distribution"],
+        "duration": "15:45",
+        "published_date": "2023-10-20",
+        "language": "en",
+        "difficulty": "beginner",
+        "topics": ["airdrops", "token-distribution", "community-building"],
+        "prerequisites": ["basic-web3-knowledge"],
+        "related_docs": [
+            "/defi-products/dexappbuilder/airdrop",
+            "/defi-products/dexgenerator/token"
+        ]
       },
       {
         "url": "https://youtu.be/eexn_26EBJA",
@@ -264,32 +551,100 @@
       {
         "url": "https://youtu.be/LxPa5iuk1R4",
         "title": "How to Quickly Sell Your Open NFT Offers with DexNFTStore",
+        "description": "Guide to listing and selling NFTs efficiently on DexNFTStore. Includes pricing strategies and marketplace optimization tips.",
         "category": "platform",
-        "priority": 1
+        "priority": 1,
+        "keywords": ["nft", "marketplace", "selling", "dexnftstore", "listing"],
+        "duration": "12:30",
+        "published_date": "2023-12-15",
+        "language": "en",
+        "difficulty": "beginner",
+        "topics": ["nft-sales", "marketplace-usage", "pricing"],
+        "prerequisites": ["nft-basics"],
+        "related_docs": [
+            "/defi-products/dexnftstore/overview",
+            "/defi-products/dexnftstore/creating-my-first-store"
+        ]
       },
       {
         "url": "https://youtu.be/yhVF6WtZd2A",
         "title": "Create crypto apps and sell as NFTs with DexKit's DexAppBuilder",
+        "description": "Learn how to monetize your DApps by converting them into NFTs. Complete guide to app creation and NFT marketplace listing.",
         "category": "platform",
-        "priority": 1
+        "priority": 1,
+        "keywords": ["nft", "dapp creation", "monetization", "marketplace", "selling"],
+        "duration": "18:45",
+        "published_date": "2023-11-25",
+        "language": "en",
+        "difficulty": "intermediate",
+        "topics": ["nft-creation", "app-monetization", "marketplace"],
+        "prerequisites": ["dexappbuilder-basics", "nft-basics"],
+        "related_docs": [
+            "/defi-products/dexappbuilder/nft-marketplace",
+            "/defi-products/dexnftstore/overview"
+        ]
       },
       {
         "url": "https://youtu.be/9Xr22V6smiY",
         "title": "Place a bid for your favorite NFTs on any community-created marketplace",
+        "description": "Step-by-step guide to participating in NFT marketplaces. Learn bidding strategies and marketplace navigation.",
         "category": "platform",
-        "priority": 2
+        "priority": 2,
+        "keywords": ["nft", "bidding", "marketplace", "community", "trading"],
+        "duration": "14:30",
+        "published_date": "2023-10-30",
+        "language": "en",
+        "difficulty": "beginner",
+        "topics": ["nft-trading", "marketplace-usage", "bidding"],
+        "prerequisites": ["web3-wallet-setup"],
+        "related_docs": [
+            "/defi-products/dexnftstore/overview",
+            "/defi-products/dexnftstore/managing-this-tool"
+        ]
       },
       {
         "url": "https://youtu.be/zNn0KG56Tkc",
         "title": "Design and mint your amazing NFT collections using generative AI",
+        "description": "Comprehensive guide to creating NFT collections with AI assistance. Covers design principles and minting process.",
         "category": "platform",
-        "priority": 2
+        "priority": 2,
+        "keywords": ["nft", "ai", "generative art", "minting", "collection"],
+        "duration": "22:15",
+        "published_date": "2023-12-05",
+        "language": "en",
+        "difficulty": "intermediate",
+        "topics": ["nft-creation", "ai-generation", "minting"],
+        "prerequisites": ["nft-basics"],
+        "related_docs": [
+            "/defi-products/dexgenerator/nft-collection",
+            "/defi-products/dexappbuilder/nft-marketplace"
+        ]
       },
       {
         "url": "https://youtu.be/g-1H4KyODWU",
         "title": "Build your crypto website with DexKit Wizard",
         "category": "platform",
         "priority": 1
+      }
+    ],
+    "token_management": [
+      {
+        "url": "https://youtu.be/R4O3mL_ZTi4",
+        "title": "Tutorial | Create your own token and deploy it to multiple networks",
+        "description": "Complete guide to creating and deploying tokens across different blockchain networks. Includes cross-chain considerations and network-specific settings.",
+        "category": "token",
+        "priority": 1,
+        "keywords": ["token", "multi-chain", "deployment", "cross-chain", "networks"],
+        "duration": "25:30",
+        "published_date": "2023-11-30",
+        "language": "en",
+        "difficulty": "advanced",
+        "topics": ["token-creation", "multi-chain-deployment", "network-management"],
+        "prerequisites": ["token-basics", "multi-wallet-setup"],
+        "related_docs": [
+          "/defi-products/dexgenerator/token",
+          "/defi-products/dexgenerator/managing-deployed-contracts"
+        ]
       }
     ]
   },
@@ -314,7 +669,6 @@
     "https://youtu.be/A8Kl_20hZDU",
     "https://youtu.be/eexn_26EBJA",
     "https://youtu.be/36pmIP7qvg8",
-    "https://youtu.be/4Ex-wV8DWgk",
     "https://youtu.be/fXppwjRqVpM",
     "https://youtu.be/dx_2PU6JRlw",
     "https://youtu.be/rXSekAW4YD4",

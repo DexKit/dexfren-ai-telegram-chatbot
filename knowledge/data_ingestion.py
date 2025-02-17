@@ -6,7 +6,6 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
-from youtube_transcript_api import YouTubeTranscriptApi
 from langchain.schema import Document
 from dotenv import load_dotenv
 from typing import List, Dict
@@ -82,68 +81,98 @@ class DexKitKnowledgeBase:
         return video_id
         
     def process_pdf(self, pdf_directory: str) -> List[Document]:
-        """Process PDF files from a directory"""
+        """Process PDF documents with improved chunking"""
         documents = []
-        
-        if not os.path.exists(pdf_directory):
-            print(f"Warning: PDF directory {pdf_directory} does not exist")
-            return documents
-            
-        for file in os.listdir(pdf_directory):
-            if file.endswith('.pdf'):
+        for filename in os.listdir(pdf_directory):
+            if filename.endswith('.pdf'):
                 try:
-                    pdf_path = os.path.join(pdf_directory, file)
-                    loader = PyPDFLoader(pdf_path)
-                    documents.extend(loader.load())
-                    print(f"Processed PDF: {file}")
-                except Exception as e:
-                    print(f"Warning: Could not process PDF {file}: {str(e)}")
+                    pdf_path = os.path.join(pdf_directory, filename)
+                    print(f"Processing PDF: {pdf_path}")
                     
+                    loader = PyPDFLoader(pdf_path)
+                    pages = loader.load()
+                    
+                    text_splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=self.chunk_size,
+                        chunk_overlap=self.chunk_overlap,
+                        separators=["\n\n", "\n", ". ", " ", ""]
+                    )
+                    
+                    for page in pages:
+                        chunks = text_splitter.split_text(page.page_content)
+                        for chunk in chunks:
+                            if len(chunk.strip()) > 50:
+                                doc = Document(
+                                    page_content=chunk,
+                                    metadata={
+                                        'source': filename,
+                                        'type': 'pdf',
+                                        'page': page.metadata.get('page', 0)
+                                    }
+                                )
+                                documents.append(doc)
+                                print(f"Added chunk from page {page.metadata.get('page', 0)}")
+                    
+                    print(f"Successfully processed PDF: {filename} - Generated {len(documents)} chunks")
+                except Exception as e:
+                    print(f"Error processing PDF {filename}: {str(e)}")
+                    import traceback
+                    print(traceback.format_exc())
+        
         return documents
         
     def process_youtube(self, video_url: str) -> List[Document]:
-        """Process a YouTube video using youtube_transcript_api"""
+        """Process a YouTube video metadata without transcripts"""
         try:
-            video_id = self.get_video_id(video_url)
-            transcript_list = None
-            
-            video_metadata = self.youtube_metadata.get(video_url, {})
-            
-            for langs in [['en'], ['es']]:
-                try:
-                    transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
-                    break
-                except Exception:
-                    continue
-                    
-            if not transcript_list:
-                print(f"Warning: No subtitles found for video: {video_metadata.get('title', video_url)}")
+            video_data = None
+            for category, content in self.youtube_metadata.get('tutorials', {}).items():
+                if isinstance(content, dict):
+                    for subcategory, videos in content.items():
+                        if isinstance(videos, list):
+                            for video in videos:
+                                if video.get('url') == video_url:
+                                    video_data = video
+                                    break
+                elif isinstance(content, list):
+                    for video in content:
+                        if video.get('url') == video_url:
+                            video_data = video
+                            break
+
+            if not video_data:
+                print(f"Warning: No metadata found for video: {video_url}")
                 return []
-                
-            full_transcript = ' '.join([entry['text'] for entry in transcript_list])
-            
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap
-            )
-            splits = text_splitter.split_text(full_transcript)
-            
-            splits = splits[:5]
-            
+
+            metadata_content = f"""
+            Title: {video_data.get('title', '')}
+            Description: {video_data.get('description', '')}
+            Category: {video_data.get('category', '')}
+            Topics: {', '.join(video_data.get('topics', []))}
+            Keywords: {', '.join(video_data.get('keywords', []))}
+            Difficulty: {video_data.get('difficulty', '')}
+            Language: {video_data.get('language', '')}
+            Related Docs: {', '.join(video_data.get('related_docs', []))}
+            """
+
             return [
                 Document(
-                    page_content=split,
+                    page_content=metadata_content.strip(),
                     metadata={
                         'source': video_url,
                         'type': 'youtube',
-                        'title': video_metadata.get('title', 'Unknown'),
-                        'category': video_metadata.get('category', 'General')
+                        'title': video_data.get('title', ''),
+                        'category': video_data.get('category', ''),
+                        'priority': video_data.get('priority', 0),
+                        'language': video_data.get('language', ''),
+                        'difficulty': video_data.get('difficulty', ''),
+                        'topics': video_data.get('topics', []),
+                        'related_docs': video_data.get('related_docs', [])
                     }
-                ) for split in splits
+                )
             ]
-            
+
         except Exception as e:
-            print(f"Warning: Could not process video {video_url}: {str(e)}")
+            print(f"Warning: Could not process video metadata {video_url}: {str(e)}")
             return []
 
     def process_web_docs(self) -> List[Document]:
@@ -214,19 +243,26 @@ class DexKitKnowledgeBase:
         """Create the knowledge base from PDFs, web docs and YouTube videos"""
         documents = []
         
-        documents.extend(self.process_web_docs())
+        print("\nProcessing documentation pages...")
+        web_docs = self.process_web_docs()
+        documents.extend(web_docs)
+        print(f"✓ Processed {len(web_docs)} web documents")
         
-        if pdf_directory:
+        if pdf_directory and os.path.exists(pdf_directory):
             print("\nProcessing PDF documents...")
-            documents.extend(self.process_pdf(pdf_directory))
+            pdf_docs = self.process_pdf(pdf_directory)
+            documents.extend(pdf_docs)
+            print(f"✓ Processed {len(pdf_docs)} PDF documents")
         
         if youtube_urls:
-            print(f"\nProcessing {len(youtube_urls)} videos...")
+            print(f"\nProcessing {len(youtube_urls)} video metadata...")
+            video_docs = []
             for url in youtube_urls:
-                print(f"Processing video: {url}")
-                documents.extend(self.process_youtube(url))
+                video_docs.extend(self.process_youtube(url))
+            documents.extend(video_docs)
+            print(f"✓ Processed metadata for {len(video_docs)} videos")
         
-        print(f"\nCreating vector knowledge base with {len(documents)} documents...")
+        print(f"\nCreating vector knowledge base with {len(documents)} total documents...")
         
         self.db = Chroma.from_documents(
             documents=documents,
@@ -234,7 +270,7 @@ class DexKitKnowledgeBase:
             persist_directory="./knowledge_base"
         )
         
-        print("Knowledge base created successfully!")
+        print("✅ Knowledge base created successfully!")
 
     def query_knowledge(self, query: str, k: int = 3) -> List[Document]:
         """Query the knowledge base"""

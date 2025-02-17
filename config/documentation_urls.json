@@ -54,7 +54,15 @@
           "nft_drop": "/nft-drop",
           "pack": "/pack",
           "split": "/split",
-          "stake_erc721": "/stakeerc721"
+          "stake_erc721": "/stakeerc721",
+          "token": "/token",
+          "token_drop": "/token-drop",
+          "vote": "/vote",
+          "stake_erc20": "/stakeerc20",
+          "multiwrap": "/multiwrap",
+          "airdrop_erc20": "/airdroperc20",
+          "airdrop_erc721": "/airdroperc721",
+          "airdrop_erc1155": "/airdroperc1155"
         }
       },
       "first_nft": "/creating-my-first-nft-collection",

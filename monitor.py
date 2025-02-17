@@ -22,8 +22,11 @@ class SystemMonitor:
     def stop_monitoring(self):
         """Detiene el monitoreo"""
         self.running = False
-        if self.monitor_thread:
-            self.monitor_thread.join()
+        if self.monitor_thread and self.monitor_thread.is_alive():
+            try:
+                self.monitor_thread.join(timeout=2)
+            except:
+                pass
         logger.info("System monitoring stopped")
 
     def _monitor_loop(self):

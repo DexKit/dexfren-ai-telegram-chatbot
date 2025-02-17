@@ -55,25 +55,52 @@ class DocumentationManager:
     
     def find_relevant_docs(self, query: str, max_results: int = 3) -> List[DocReference]:
         """Find relevant documentation links for a given query with limit"""
-        relevant_docs = []
         query_terms = set(query.lower().split())
         
-        priority_terms = {'token', 'contract', 'erc20', 'deploy', 'create'}
-        has_priority = bool(query_terms & priority_terms)
+        priority_terms = {
+            'contract': {
+                'high': {'contract', 'token', 'erc20', 'erc721', 'erc1155', 'thirdweb'},
+                'medium': {'deploy', 'create', 'mint', 'airdrop', 'stake'},
+                'low': {'manage', 'update', 'list'}
+            },
+            'dapp': {
+                'high': {'dapp', 'application', 'builder'},
+                'medium': {'template', 'customize', 'configure'},
+                'low': {'manage', 'update'}
+            }
+        }
         
         scored_docs = []
         for key, doc in self.docs_map.items():
-            key_terms = set(key.lower().split('_'))
-            intersection = query_terms & key_terms
+            key_terms = set(key.lower().replace('-', '_').split('_'))
+            path_terms = set(doc.url.lower().split('/'))
+            
+            searchable_terms = key_terms | path_terms
+            
+            intersection = query_terms & searchable_terms
+            
             if intersection:
-                score = len(intersection) * (2 if has_priority and 
-                    any(term in key.lower() for term in priority_terms) else 1)
-                scored_docs.append((score, doc))
+                base_score = len(intersection)
+                bonus_score = 0
+                
+                for category, terms in priority_terms.items():
+                    if query_terms & terms['high']:
+                        if category == 'contract' and 'thirdweb' in key_terms:
+                            bonus_score += 3
+                        bonus_score += 2
+                    if query_terms & terms['medium']:
+                        bonus_score += 1
+                    if query_terms & terms['low']:
+                        bonus_score += 0.5
+                
+                if any(term in doc.url.lower() for term in query_terms):
+                    bonus_score += 1
+                    
+                final_score = base_score + bonus_score
+                scored_docs.append((final_score, doc))
         
         scored_docs.sort(reverse=True, key=lambda x: x[0])
-        relevant_docs = [doc for _, doc in scored_docs[:max_results]]
-        
-        return relevant_docs
+        return [doc for _, doc in scored_docs[:max_results]]
 
     def get_url(self, key: str) -> str:
         """Get URL by key"""
@@ -91,3 +118,14 @@ class DocumentationManager:
         """Reload configuration without restarting the bot"""
         self.load_documentation()
         self.create_knowledge_base() 
+
+    def debug_search(self, query: str) -> None:
+        """Helps to debug the search results showing the scores"""
+        query_terms = set(query.lower().split())
+        print(f"\nSearch for: '{query}'")
+        print(f"Search terms: {query_terms}")
+        
+        results = self.find_relevant_docs(query, max_results=5)
+        for i, doc in enumerate(results, 1):
+            print(f"\n{i}. {doc.title}")
+            print(f"   URL: {doc.url}") 

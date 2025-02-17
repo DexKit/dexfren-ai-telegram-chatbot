@@ -1,6 +1,7 @@
 from utils.logger import setup_logger
 import subprocess
 import os
+import signal
 import sys
 from dotenv import load_dotenv
 from ascii_art import DEXKIT_LOGO
@@ -13,8 +14,7 @@ logger = setup_logger()
 system_monitor = SystemMonitor()
 
 def run_bot():
-    """Inicia el proceso del bot"""
-    logger.info("🤖 Starting DexFren Bot...")
+    logger.info("Starting DexFren Bot...")
     try:
         process = subprocess.Popen(
             [sys.executable, "main.py"],
@@ -24,15 +24,14 @@ def run_bot():
             bufsize=1,
             env={**os.environ, 'PYTHONUNBUFFERED': '1'}
         )
-        logger.info("✅ Bot started successfully")
+        logger.info("Bot started successfully")
         return process
     except Exception as e:
-        logger.error(f"❌ Error starting bot: {str(e)}")
+        logger.error(f"Error starting bot: {str(e)}")
         return None
 
 def run_frontend():
-    """Inicia el proceso del frontend"""
-    logger.info("🌐 Starting Frontend Server...")
+    logger.info("Starting Frontend Server...")
     try:
         process = subprocess.Popen(
             [sys.executable, "frontend/app.py"],
@@ -41,27 +40,50 @@ def run_frontend():
             universal_newlines=True,
             bufsize=1
         )
-        logger.info("✅ Frontend started successfully")
+        logger.info("Frontend started successfully")
         return process
     except Exception as e:
-        logger.error(f"❌ Error starting frontend: {str(e)}")
+        logger.error(f"Error starting frontend: {str(e)}")
         return None
 
 def cleanup(processes):
     """Limpia los procesos al cerrar"""
     logger.info("\n🛑 Stopping services...")
+    
+    deadline = time.time() + 3
+    
     for process in processes:
-        if process:
-            process.terminate()
+        if process and process.poll() is None:
             try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+                process.terminate()
+            except:
+                pass
+
+    while time.time() < deadline:
+        if all(p is None or p.poll() is not None for p in processes):
+            break
+        time.sleep(0.1)
+
+    for process in processes:
+        if process and process.poll() is None:
+            try:
                 process.kill()
-    system_monitor.stop_monitoring()
+                process.wait(timeout=1)
+            except:
+                pass
+
+    try:
+        system_monitor_thread = threading.Thread(target=system_monitor.stop_monitoring)
+        system_monitor_thread.daemon = True
+        system_monitor_thread.start()
+        system_monitor_thread.join(timeout=2)
+    except:
+        pass
+
     logger.info("✅ All services stopped")
+    sys.exit(0)
 
 def monitor_process_output(process, name):
-    """Monitor and log process output"""
     while True:
         try:
             line = process.stdout.readline()
@@ -85,6 +107,13 @@ def main():
     print("="*50 + "\n")
 
     processes = []
+    
+    def signal_handler(signum, frame):
+        cleanup(processes)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         bot_process = run_bot()
         if bot_process:
@@ -112,7 +141,7 @@ def main():
             time.sleep(0.1)
 
     except KeyboardInterrupt:
-        logger.info("\n⚡ Received interrupt signal")
+        logger.info("Received interrupt signal")
     except Exception as e:
         logger.error(f"Critical error: {str(e)}")
     finally:
