@@ -273,9 +273,21 @@ def upload_document():
             os.makedirs(docs_dir, exist_ok=True)
             
             file_path = os.path.join(docs_dir, filename)
+            if os.path.exists(file_path):
+                return jsonify({
+                    'success': False,
+                    'error': 'File already exists. Please rename the file or delete the existing one.'
+                }), 400
+            
             file.save(file_path)
             
-            print(f"File saved successfully at: {file_path}")
+            processed_files = get_processed_files()
+            processed_files[filename] = {
+                'added_date': datetime.now().isoformat(),
+                'processed': False,
+                'last_modified': os.path.getmtime(file_path)
+            }
+            save_processed_files(processed_files)
             
             return jsonify({
                 'success': True,
@@ -290,12 +302,24 @@ def upload_document():
             
     except Exception as e:
         print(f"Error uploading file: {e}")
-        import traceback
-        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
+def get_processed_files():
+    """Get the processed files"""
+    processed_files_path = os.path.join(app.config['UPLOAD_FOLDER'], '.processed_files.json')
+    if os.path.exists(processed_files_path):
+        with open(processed_files_path, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_processed_files(processed_files):
+    """Save the processed files"""
+    processed_files_path = os.path.join(app.config['UPLOAD_FOLDER'], '.processed_files.json')
+    with open(processed_files_path, 'w') as f:
+        json.dump(processed_files, f, indent=2)
 
 @app.route('/api/documents/delete/<filename>', methods=['DELETE'])
 def delete_document(filename):
@@ -317,6 +341,31 @@ def delete_document(filename):
             
     except Exception as e:
         print(f"Error deleting file: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/documents/status')
+def get_documents_status():
+    try:
+        processed_files = get_processed_files()
+        documents = []
+        
+        for filename, info in processed_files.items():
+            documents.append({
+                'filename': filename,
+                'processed': info['processed'],
+                'added_date': info['added_date'],
+                'last_processed': info.get('last_processed')
+            })
+            
+        return jsonify({
+            'success': True,
+            'documents': sorted(documents, key=lambda x: x['added_date'], reverse=True)
+        })
+        
+    except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)

@@ -6,22 +6,32 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from swarm import Swarm, Agent
 from knowledge.data_ingestion import DexKitKnowledgeBase
-from langchain_chroma import Chroma
-from knowledge.documentation_manager import DocumentationManager
+from langchain_community.vectorstores import Chroma
 from chromadb.config import Settings
 import sys
 from typing import Optional
 import json
 from utils.logger import setup_logger
 
+load_dotenv()
 logger = setup_logger()
 
 client = Swarm()
 knowledge_base = DexKitKnowledgeBase()
 
-active_conversations = {}
+knowledge_base.db = Chroma(
+    persist_directory="./knowledge_base",
+    embedding_function=knowledge_base.embeddings,
+    client_settings=Settings(
+        anonymized_telemetry=False,
+        allow_reset=True,
+        is_persistent=True
+    )
+)
 
-docs_manager = DocumentationManager()
+knowledge_base.cache.set_query_function(knowledge_base._raw_query_knowledge)
+
+active_conversations = {}
 
 def load_agent_config():
     """Load agent configuration from JSON file"""
@@ -137,7 +147,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "content": message_text
         })
         
-        relevant_info = knowledge_base.query_knowledge(message_text)
+        relevant_info = knowledge_base.cache.query(message_text)
         context_text = "\n".join([doc.page_content for doc in relevant_info])
         
         conversation = [
@@ -197,57 +207,36 @@ async def keep_typing(bot, chat_id):
         pass
 
 def process_context(knowledge_base, message_text):
-    relevant_info = knowledge_base.query_knowledge(message_text)
-    
-    priority_keywords = [
-        'contract', 'token', 'erc20', 'dapp', 'builder', 
-        'template', 'swap', 'exchange', 'wallet', 'nft'
-    ]
-    
-    priority_docs = []
-    secondary_docs = []
-    
-    for doc in relevant_info:
-        content_lower = doc.page_content.lower()
-        score = sum(2 for keyword in priority_keywords if keyword in content_lower)
-        score += sum(3 for word in message_text.lower().split() if word in content_lower)
-        
-        if score > 2:
-            priority_docs.append((score, doc))
-        else:
-            secondary_docs.append((score, doc))
-    
-    priority_docs.sort(reverse=True)
-    secondary_docs.sort(reverse=True)
-    
-    ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
-    
-    return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
-
-CHROMA_SETTINGS = Settings(
-    anonymized_telemetry=False,
-    allow_reset=True
-)
-
-def ensure_knowledge_base_directory():
-    kb_dir = "./knowledge_base"
-    if not os.path.exists(kb_dir):
-        os.makedirs(kb_dir)
-        print(f"Created knowledge base directory: {kb_dir}")
-    return kb_dir
-
-def initialize_knowledge_base() -> Optional[Chroma]:
-    """Initialize the knowledge base with proper error handling"""
     try:
-        kb_dir = ensure_knowledge_base_directory()
-        return Chroma(
-            persist_directory=kb_dir,
-            embedding_function=knowledge_base.embeddings,
-            client_settings=CHROMA_SETTINGS
-        )
+        relevant_info = knowledge_base.cache.query(message_text)
+        
+        priority_keywords = [
+            'contract', 'token', 'erc20', 'dapp', 'builder', 
+            'template', 'swap', 'exchange', 'wallet', 'nft'
+        ]
+        
+        priority_docs = []
+        secondary_docs = []
+        
+        for doc in relevant_info:
+            content_lower = doc.page_content.lower()
+            score = sum(2 for keyword in priority_keywords if keyword in content_lower)
+            score += sum(3 for word in message_text.lower().split() if word in content_lower)
+            
+            if score > 2:
+                priority_docs.append((score, doc))
+            else:
+                secondary_docs.append((score, doc))
+        
+        priority_docs.sort(reverse=True)
+        secondary_docs.sort(reverse=True)
+        
+        ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
+        
+        return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
     except Exception as e:
-        logging.error(f"Failed to initialize knowledge base: {e}")
-        return None
+        logger.error(f"Error processing context: {str(e)}")
+        return ""
 
 def load_youtube_metadata():
     """Load YouTube metadata with proper error handling"""
@@ -272,11 +261,6 @@ async def shutdown():
 def main():
     """Initialize and run the bot"""
     try:
-        knowledge_base.db = initialize_knowledge_base()
-        if not knowledge_base.db:
-            logging.error("Could not initialize knowledge base. Exiting...")
-            sys.exit(1)
-            
         global app
         app = Application.builder().token(os.getenv('TELEGRAM_BOT_TOKEN')).build()
         

@@ -21,8 +21,7 @@ def run_bot():
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
-            bufsize=1,
-            env={**os.environ, 'PYTHONUNBUFFERED': '1'}
+            bufsize=1
         )
         logger.info("Bot started successfully")
         return process

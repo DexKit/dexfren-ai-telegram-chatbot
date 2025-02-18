@@ -119,6 +119,40 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+async function checkDocumentStatus() {
+    try {
+        const response = await fetch('/api/documents/status');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateDocumentsList(data.documents);
+        }
+    } catch (error) {
+        console.error('Error checking document status:', error);
+    }
+}
+
+function updateDocumentsList(documents) {
+    const documentsList = document.getElementById('documentsList');
+    if (!documentsList) return;
+
+    documentsList.innerHTML = documents.map(doc => `
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center space-x-4">
+                <span class="text-sm font-medium">${doc.filename}</span>
+                <span class="px-2 py-1 text-xs rounded-full ${
+                    doc.processed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }">
+                    ${doc.processed ? 'Processed' : 'Pending'}
+                </span>
+            </div>
+            <div class="text-sm text-gray-500">
+                Added: ${new Date(doc.added_date).toLocaleString()}
+            </div>
+        </div>
+    `).join('');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {

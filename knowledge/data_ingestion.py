@@ -9,11 +9,13 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.schema import Document
 from dotenv import load_dotenv
 from typing import List, Dict
+from .cache_manager import KnowledgeCache
+from chromadb.config import Settings
 
 load_dotenv()
 
 class DexKitKnowledgeBase:
-    def __init__(self, chunk_size=500, chunk_overlap=50):
+    def __init__(self, chunk_size: int = 300, chunk_overlap: int = 30):
         self.embeddings = OpenAIEmbeddings(
             model="text-embedding-3-small",
             api_key=os.getenv('OPENAI_API_KEY')
@@ -24,6 +26,7 @@ class DexKitKnowledgeBase:
         self.youtube_metadata = self._load_youtube_metadata()
         self.docs_metadata = self._load_docs_metadata()
         self.platform_urls = self._load_platform_urls()
+        self.cache = KnowledgeCache(cache_size=100, cache_ttl=3600)
         
     def _load_youtube_metadata(self) -> Dict:
         """Load YouTube metadata from config file"""
@@ -240,7 +243,19 @@ class DexKitKnowledgeBase:
         return documents
 
     def create_knowledge_base(self, pdf_directory: str = None, youtube_urls: List[str] = None):
-        """Create the knowledge base from PDFs, web docs and YouTube videos"""
+        """Create or load knowledge base"""
+        if os.getenv('SKIP_DOC_PROCESSING'):
+            self.db = Chroma(
+                persist_directory="./knowledge_base",
+                embedding_function=self.embeddings,
+                client_settings=Settings(
+                    anonymized_telemetry=False,
+                    allow_reset=True,
+                    is_persistent=True
+                )
+            )
+            return
+        
         documents = []
         
         print("\nProcessing documentation pages...")
@@ -264,18 +279,100 @@ class DexKitKnowledgeBase:
         
         print(f"\nCreating vector knowledge base with {len(documents)} total documents...")
         
-        self.db = Chroma.from_documents(
-            documents=documents,
-            embedding=self.embeddings,
-            persist_directory="./knowledge_base"
+        self.db = Chroma(
+            persist_directory="./knowledge_base",
+            embedding_function=self.embeddings,
+            client_settings=Settings(
+                anonymized_telemetry=False,
+                allow_reset=True,
+                is_persistent=True
+            )
         )
         
+        self.db.add_documents(documents)
+        
         print("✅ Knowledge base created successfully!")
+        
+        self.cache.set_query_function(self._raw_query_knowledge)
 
-    def query_knowledge(self, query: str, k: int = 3) -> List[Document]:
-        """Query the knowledge base"""
+    def _raw_query_knowledge(self, query: str, k: int = 3):
+        """Raw query function without cache"""
         if not self.db:
             raise ValueError("Knowledge base not initialized")
+        return self.db.similarity_search(query, k=k)
         
-        results = self.db.similarity_search(query, k=k)
-        return results
+    def query_knowledge(self, query: str, k: int = 3):
+        """Query function with cache"""
+        try:
+            return self.cache.query(query, k)
+        except Exception as e:
+            print(f"Cache error, falling back to direct query: {str(e)}")
+            return self._raw_query_knowledge(query, k)
+
+    def process_new_pdfs(self, pdf_paths: List[str]) -> List[Document]:
+        """Process new PDFs incrementally with batch processing"""
+        BATCH_SIZE = 50
+        documents = []
+        current_batch = []
+        
+        for pdf_path in pdf_paths:
+            if os.path.isfile(pdf_path) and pdf_path.endswith('.pdf'):
+                try:
+                    loader = PyPDFLoader(pdf_path)
+                    pages = loader.load()
+                    
+                    text_splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=self.chunk_size,
+                        chunk_overlap=self.chunk_overlap,
+                        separators=["\n\n", "\n", ". ", " ", ""]
+                    )
+                    
+                    for page in pages:
+                        chunks = text_splitter.split_text(page.page_content)
+                        for chunk in chunks:
+                            if len(chunk.strip()) > 50:
+                                doc = Document(
+                                    page_content=chunk,
+                                    metadata={
+                                        'source': os.path.basename(pdf_path),
+                                        'type': 'pdf',
+                                        'page': page.metadata.get('page', 0)
+                                    }
+                                )
+                                current_batch.append(doc)
+                                documents.append(doc)
+                                print(f"Added chunk from {os.path.basename(pdf_path)} page {page.metadata.get('page', 0)}")
+                                
+                                if len(current_batch) >= BATCH_SIZE:
+                                    if self.db:
+                                        self.db.add_documents(current_batch)
+                                        print(f"Processed batch of {len(current_batch)} chunks")
+                                    current_batch = []
+                
+                except Exception as e:
+                    print(f"Error processing PDF {pdf_path}: {str(e)}")
+                
+        if current_batch and self.db:
+            try:
+                self.db.add_documents(current_batch)
+                print(f"Processed final batch of {len(current_batch)} chunks")
+            except Exception as e:
+                print(f"Error processing final batch: {str(e)}")
+        
+        return documents
+
+    def process_new_videos(self, video_urls: List[str]) -> List[Document]:
+        """Process new YouTube videos incrementally"""
+        documents = []
+        for url in video_urls:
+            try:
+                video_docs = self.process_youtube(url)
+                documents.extend(video_docs)
+            except Exception as e:
+                print(f"Error processing video {url}: {str(e)}")
+        
+        if documents and self.db:
+            self.db.add_documents(documents)
+            print(f"Added {len(documents)} new video chunks to knowledge base")
+        
+        return documents
