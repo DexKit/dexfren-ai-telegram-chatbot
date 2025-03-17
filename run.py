@@ -12,10 +12,23 @@ import time
 load_dotenv()
 logger = setup_logger()
 system_monitor = SystemMonitor()
+cleanup_executed = False
 
 def run_bot():
     logger.info("Starting DexFren Bot...")
     try:
+        required_files = [
+            'config/agent_instructions.json',
+            'config/youtube_videos.json',
+            'config/platform_urls.json',
+            'config/documentation_urls.json'
+        ]
+        
+        for file in required_files:
+            if not os.path.exists(file):
+                logger.error(f"Required configuration file not found: {file}")
+                return None
+                
         process = subprocess.Popen(
             [sys.executable, "main.py"],
             stdout=subprocess.PIPE,
@@ -46,58 +59,39 @@ def run_frontend():
         return None
 
 def cleanup(processes):
-    """Limpia los procesos al cerrar"""
-    logger.info("\n🛑 Stopping services...")
+    global cleanup_executed
     
-    deadline = time.time() + 3
+    if cleanup_executed:
+        return
+    
+    logger.info("Stopping all services...")
+    
+    system_monitor.stop_monitoring()
     
     for process in processes:
         if process and process.poll() is None:
             try:
                 process.terminate()
-            except:
-                pass
-
-    while time.time() < deadline:
-        if all(p is None or p.poll() is not None for p in processes):
-            break
-        time.sleep(0.1)
-
-    for process in processes:
-        if process and process.poll() is None:
-            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
                 process.kill()
-                process.wait(timeout=1)
-            except:
-                pass
-
-    try:
-        system_monitor_thread = threading.Thread(target=system_monitor.stop_monitoring)
-        system_monitor_thread.daemon = True
-        system_monitor_thread.start()
-        system_monitor_thread.join(timeout=2)
-    except:
-        pass
-
-    logger.info("✅ All services stopped")
-    sys.exit(0)
+    
+    logger.info("All services stopped")
+    cleanup_executed = True
 
 def monitor_process_output(process, name):
-    while True:
-        try:
-            line = process.stdout.readline()
-            if not line and process.poll() is not None:
-                break
+    if process is None:
+        return
+        
+    try:
+        for line in iter(process.stdout.readline, ''):
             if line:
-                line = line.strip()
-                if line:
-                    if "ERROR" in line.upper():
-                        logger.error(f"{name}: {line}")
-                    else:
-                        logger.info(f"{name}: {line}")
-        except Exception as e:
-            logger.error(f"Error reading {name} output: {str(e)}")
-            break
+                if "ERROR" in line or "Error" in line:
+                    logger.error(f"{name}: {line}")
+                else:
+                    logger.info(f"{name}: {line}")
+    except Exception as e:
+        logger.error(f"Error reading {name} output: {str(e)}")
 
 def main():
     print(DEXKIT_LOGO)

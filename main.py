@@ -6,12 +6,12 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from swarm import Swarm, Agent
 from knowledge.data_ingestion import DexKitKnowledgeBase
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from chromadb.config import Settings
 import sys
-from typing import Optional
 import json
 from utils.logger import setup_logger
+import re
 
 load_dotenv()
 logger = setup_logger()
@@ -91,6 +91,9 @@ def format_agent_instructions(config):
     
     sections.append("\nSOCIAL MEDIA RULES:")
     sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config['social_media_rules'])])
+
+    sections.append("\nDEXAPPBUILDER SPECIFICS:")
+    sections.extend([f"{i+1}. {rule}" for i, rule in enumerate(config.get('dexappbuilder_specifics', []))])
     
     return "\n".join(sections)
 
@@ -193,7 +196,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         error_msg = f"Error processing message: {str(e)}"
         logger.error(error_msg)
-        await update.message.reply_text("Lo siento, hubo un error procesando tu mensaje.")
+        await update.message.reply_text("Sorry, there was an error processing your message.")
 
 async def keep_typing(bot, chat_id):
     try:
@@ -208,34 +211,140 @@ async def keep_typing(bot, chat_id):
 
 def process_context(knowledge_base, message_text):
     try:
+        with open('config/agent_instructions.json', 'r') as f:
+            agent_config = json.load(f)
+        with open('config/keywords.json', 'r') as f:
+            keywords_config = json.load(f)
+        
+        message_words = set(message_text.lower().replace('?', '').split())
+        
         relevant_info = knowledge_base.cache.query(message_text)
         
-        priority_keywords = [
-            'contract', 'token', 'erc20', 'dapp', 'builder', 
-            'template', 'swap', 'exchange', 'wallet', 'nft'
-        ]
+        videos = []
+        docs = []
+        web_pages = []
         
-        priority_docs = []
-        secondary_docs = []
+        platform_info = knowledge_base.get_platform_urls_for_context(message_text)
         
         for doc in relevant_info:
-            content_lower = doc.page_content.lower()
-            score = sum(2 for keyword in priority_keywords if keyword in content_lower)
-            score += sum(3 for word in message_text.lower().split() if word in content_lower)
-            
-            if score > 2:
-                priority_docs.append((score, doc))
+            if doc.metadata.get('type') == 'youtube':
+                if 'source' in doc.metadata and doc.metadata['source']:
+                    video_keywords = set(doc.metadata.get('keywords', []))
+                    video_topics = set(doc.metadata.get('topics', []))
+                    match_score = len(message_words & (video_keywords | video_topics)) * 2
+                    
+                    if match_score == 0:
+                        match_score = 1
+                        
+                    videos.append((match_score, doc))
+            elif doc.metadata.get('type') == 'web_page':
+                web_pages.append(doc)
             else:
-                secondary_docs.append((score, doc))
+                docs.append(doc)
         
-        priority_docs.sort(reverse=True)
-        secondary_docs.sort(reverse=True)
+        videos.sort(reverse=True, key=lambda x: x[0])
+        selected_content = []
         
-        ordered_docs = [doc for _, doc in priority_docs[:3] + secondary_docs[:2]]
+        if videos:
+            selected_content.extend([doc for score, doc in videos[:2]])
+        if web_pages:
+            selected_content.extend(web_pages[:1])
+        if docs:
+            selected_content.extend(docs[:1])
+            
+        if not selected_content and not platform_info:
+            return ""
+            
+        context_parts = []
         
-        return "\n\nRelevant Context:\n" + "\n---\n".join([doc.page_content for doc in ordered_docs])
+        if platform_info:
+            context_parts.append(platform_info)
+        
+        for doc in selected_content:
+            if doc.metadata.get('type') == 'youtube':
+                video_url = doc.metadata.get('source', '')
+                if video_url and isinstance(video_url, str) and video_url.startswith('http'):
+                    video_content = f"""📺 CRITICAL - EXACT VIDEO REFERENCE:
+TITLE: {doc.metadata.get('title', 'Tutorial Video')}
+VIDEO_URL: {video_url}
+DURATION: {doc.metadata.get('duration', 'Not specified')}
+DIFFICULTY: {doc.metadata.get('difficulty', 'Beginner')}
+TOPICS: {', '.join(doc.metadata.get('topics', []))}
+
+STRICT REQUIREMENTS:
+1. COPY THIS EXACT URL: {video_url}
+2. DO NOT MODIFY OR REPLACE THE URL
+3. DO NOT CREATE PLACEHOLDER URLS
+
+Documentation: https://docs.dexkit.com{doc.metadata.get('related_docs', [''])[0]}"""
+                    context_parts.append(video_content)
+                    logger.debug(f"Adding video to context: {video_url}")
+            else:
+                if not platform_info:
+                    platform_urls = knowledge_base.platform_urls.get('dapp_builder', {})
+                    urls_section = "\nPlatform Links:"
+                    for key, url in platform_urls.items():
+                        if key in ['create', 'dashboard']:
+                            urls_section += f"\n- {key.title()}: {url}"
+                    context_parts.append(f"{doc.page_content}{urls_section}")
+                else:
+                    context_parts.append(doc.page_content)
+        
+        logger.debug(f"Final context being sent to LLM: {context_parts}")
+        
+        final_context = "\n\nRelevant Context:\n" + "\n---\n".join(context_parts)
+        platform_urls_in_context = re.findall(r'Dashboard: (https?://[^\s]+)', final_context)
+        
+        if platform_urls_in_context:
+            logger.info(f"Context contains platform URLs: {platform_urls_in_context}")
+        
+        video_urls_in_context = re.findall(r'VIDEO_URL: (https?://[^\s]+)', final_context)
+        if video_urls_in_context:
+            logger.info(f"Context contains {len(video_urls_in_context)} valid video URLs")
+            
+        is_video_list_query = any(kw in message_text.lower() for kw in [
+            "list", "all videos", "available videos", "tutorial videos", 
+            "videos available", "video list", "tutorials"
+        ])
+        
+        if is_video_list_query:
+            logger.info("Detected query for video list, retrieving all available videos")
+            all_videos = knowledge_base.get_all_available_videos()
+            
+            if all_videos:
+                videos_context = "📹 AVAILABLE TUTORIAL VIDEOS:\n\n"
+                
+                videos_by_category = {}
+                for video in all_videos:
+                    for category in video.get('categories', ['Uncategorized']):
+                        if not category:
+                            category = 'Uncategorized'
+                        if category not in videos_by_category:
+                            videos_by_category[category] = []
+                        videos_by_category[category].append(video)
+                
+                for category, category_videos in videos_by_category.items():
+                    videos_context += f"Category: {category.upper()}\n"
+                    for i, video in enumerate(category_videos, 1):
+                        videos_context += f"{i}. {video['title']}\n"
+                        videos_context += f"   URL: {video['url']}\n"
+                        videos_context += f"   Duration: {video.get('duration', 'N/A')}\n"
+                        videos_context += f"   Difficulty: {video.get('difficulty', 'Beginner')}\n\n"
+                
+                videos_context += "\nINSTRUCTIONS FOR LISTING VIDEOS:\n"
+                videos_context += "1. Format the response as a clean, categorized list\n"
+                videos_context += "2. ALWAYS include the EXACT video URLs\n"
+                videos_context += "3. NEVER replace or modify the URLs\n"
+                videos_context += "4. Include difficulty level for each video\n"
+                
+                return "\n\nRelevant Context:\n" + videos_context
+        
+        return final_context
+        
     except Exception as e:
         logger.error(f"Error processing context: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return ""
 
 def load_youtube_metadata():
@@ -280,6 +389,30 @@ def main():
     except Exception as e:
         logging.error(f"Critical error: {e}")
         sys.exit(1)
+
+def _calculate_match_score(message_words, doc):
+    """Calculate a relevance score for a given document"""
+    video_keywords = set(doc.metadata.get('keywords', []))
+    video_topics = set(doc.metadata.get('topics', []))
+    return len(message_words & (video_keywords | video_topics)) * 2 or 1
+
+def _detect_query_intent(message_text, config_file='config/keywords.json'):
+    """Detect the intent of the query based on keywords"""
+    with open(config_file, 'r') as f:
+        keywords_config = json.load(f)
+    
+    query_lower = message_text.lower().replace('?', '')
+    
+    intents = {}
+    for category, data in keywords_config.items():
+        keywords = data.get('keywords', [])
+        if any(kw.lower() in query_lower for kw in keywords):
+            intents[category] = True
+    
+    video_terms = ["video", "tutorial", "demos", "demos", "guide", "ver", "show"]
+    intents['video_query'] = any(term in query_lower for term in video_terms)
+    
+    return intents
 
 if __name__ == "__main__":
     main()

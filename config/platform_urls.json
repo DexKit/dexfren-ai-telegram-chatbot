@@ -1,7 +1,8 @@
 {
   "main": {
     "dexkit": "https://dexkit.com",
-    "dexappbuilder": "https://dexappbuilder.dexkit.com"
+    "dexappbuilder": "https://dexappbuilder.dexkit.com",
+    "docs": "https://docs.dexkit.com"
   },
   "social": {
     "discord": "https://discord.com/invite/dexkit-official-943552525217435649",
@@ -10,22 +11,22 @@
     "telegram": "https://t.me/dexkit",
     "linkedin": "https://www.linkedin.com/company/dexkit",
     "reddit": "https://www.reddit.com/r/dexkit",
-    "medium": "https://dexkit.medium.com",
     "instagram": "https://www.instagram.com/dexkit.io",
     "facebook": "https://www.facebook.com/dexkit.io"
   },
   "about": {
     "mission": "https://dexkit.com/about/mission-vision-values",
-    "team": "https://dexkit.com/about/our-team"
+    "team": "https://dexkit.com/about/our-team",
+    "contact": "https://dexkit.com/contact"
   },
   "products": {
     "dexappbuilder": {
       "home": "https://dexappbuilder.dexkit.com",
-      "solutions": "https://dexappbuilder.dexkit.com/solutions",
       "admin": {
         "create": "https://dexappbuilder.dexkit.com/admin/create",
         "dashboard": "https://dexappbuilder.dexkit.com/admin",
-        "templates": "https://docs.dexkit.com/defi-products/dexappbuilder/starting-with-templates",
+        "templates": "https://dexappbuilder.dexkit.com/admin/templates",
+        "apps": "https://dexappbuilder.dexkit.com/admin/apps",
         "quick_builders": {
           "swap": "https://dexappbuilder.dexkit.com/admin/quick-builder/swap",
           "exchange": "https://dexappbuilder.dexkit.com/admin/quick-builder/exchange",
@@ -33,6 +34,27 @@
           "nft_store": "https://dexappbuilder.dexkit.com/admin/quick-builder/nft-store"
         }
       }
+    },
+    "dexgenerator": {
+      "overview": "https://dexkit.com/dexgenerator",
+      "home": "https://dexappbuilder.dexkit.com/forms",
+      "contracts": {
+        "create": "https://dexappbuilder.dexkit.com/forms/contracts/create",
+        "list": "https://dexappbuilder.dexkit.com/forms/contracts/list"
+      },
+      "forms": {
+        "create": "https://dexappbuilder.dexkit.com/forms/create",
+        "manage": "https://dexappbuilder.dexkit.com/forms/manage"
+      }
+    },
+    "dexswap": {
+      "home": "https://dexappbuilder.dexkit.com/admin/quick-builder/swap"
+    },
+    "dexnftstore": {
+      "home": "https://dexappbuilder.dexkit.com/admin/quick-builder/nft-store"
+    },
+    "dexwallet": {
+      "home": "https://dexappbuilder.dexkit.com/admin/quick-builder/wallet" 
     }
   },
   "token": {
@@ -46,6 +68,12 @@
       "bsc": "https://dexappbuilder.dexkit.com/token/buy/bsc/kit",
       "polygon": "https://dexappbuilder.dexkit.com/token/buy/polygon/kit"
     }
+  },
+  "support": {
+    "contact": "https://dexkit.com/contact"
+  },
+  "legal": {
+    "terms": "https://dexkit.com/legal/terms"
   },
   "roadmap": "https://dexkit.com/roadmap"
 } 

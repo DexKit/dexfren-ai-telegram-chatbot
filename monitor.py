@@ -12,7 +12,7 @@ class SystemMonitor:
         self.monitor_thread = None
 
     def start_monitoring(self):
-        """Inicia el monitoreo en un hilo separado"""
+        """Starts the monitoring in a separate thread"""
         self.running = True
         self.monitor_thread = threading.Thread(target=self._monitor_loop)
         self.monitor_thread.daemon = True
@@ -20,7 +20,7 @@ class SystemMonitor:
         logger.info("System monitoring started")
 
     def stop_monitoring(self):
-        """Detiene el monitoreo"""
+        """Stops the monitoring"""
         self.running = False
         if self.monitor_thread and self.monitor_thread.is_alive():
             try:
@@ -30,7 +30,7 @@ class SystemMonitor:
         logger.info("System monitoring stopped")
 
     def _monitor_loop(self):
-        """Loop principal de monitoreo"""
+        """Main monitoring loop"""
         while self.running:
             try:
                 cpu_percent = psutil.cpu_percent(interval=1)

@@ -6,6 +6,9 @@ from typing import Optional, List, Callable, Dict, Tuple
 from tqdm import tqdm
 from datetime import datetime
 import hashlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 knowledge_base = DexKitKnowledgeBase(
     chunk_size=500,
@@ -31,14 +34,38 @@ def clean_previous_training():
                 print(f"! Error cleaning {directory}: {str(e)}")
 
 def load_youtube_urls():
-    """Load YouTube URLs from config file"""
+    """Load YouTube URLs from both config files"""
     try:
+        urls = set()
+        
         with open('config/youtube_videos.json', 'r', encoding='utf-8-sig') as f:
             content = f.read().strip()
             data = json.loads(content)
-            urls = data.get('video_list', [])
-            print(f"Successfully loaded {len(urls)} YouTube URLs")
-            return urls
+            
+            def extract_urls(obj):
+                if isinstance(obj, dict):
+                    if 'url' in obj:
+                        urls.add(obj['url'])
+                    for value in obj.values():
+                        extract_urls(value)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        extract_urls(item)
+            
+            extract_urls(data)
+        
+        with open('config/agent_instructions.json', 'r') as f:
+            agent_config = json.load(f)
+            content_mapping = agent_config['instructions'].get('content_mapping', {})
+            
+            for category in content_mapping.values():
+                if 'primary_video' in category:
+                    urls.add(category['primary_video']['url'])
+                for video in category.get('secondary_videos', []):
+                    urls.add(video['url'])
+        
+        print(f"Successfully loaded {len(urls)} YouTube URLs")
+        return list(urls)
     except Exception as e:
         print(f"Error loading YouTube URLs: {str(e)}")
         return []
@@ -80,7 +107,8 @@ def check_critical_files_changed() -> Tuple[bool, List[str]]:
         'docs': './docs',
         'platform_urls': './config/platform_urls.json',
         'documentation_urls': './config/documentation_urls.json',
-        'youtube_videos': './config/youtube_videos.json'
+        'youtube_videos': './config/youtube_videos.json',
+        'agent_instructions': './config/agent_instructions.json'
     }
     
     previous_hashes = load_training_hashes()

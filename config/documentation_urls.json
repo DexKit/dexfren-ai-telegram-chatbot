@@ -62,12 +62,13 @@
           "multiwrap": "/multiwrap",
           "airdrop_erc20": "/airdroperc20",
           "airdrop_erc721": "/airdroperc721",
-          "airdrop_erc1155": "/airdroperc1155"
+          "airdrop_erc1155": "/airdroperc1155",
+          "stake_erc1155": "/stakeerc1155",
+          "airdrop_erc20_claimable": "/airdroperc20claimable"
         }
       },
       "first_nft": "/creating-my-first-nft-collection",
-      "manage_contracts": "/managing-deployed-contracts",
-      "updates": "/future-updates"
+      "manage_contracts": "/managing-deployed-contracts"
     }
   },
   "dexexchangepro": {
@@ -91,6 +92,28 @@
       "overview": "/overview",
       "first_wallet": "/creating-my-first-wallet",
       "management": "/managing-this-tool"
+    }
+  },
+  "contracts": {
+    "base_url": "https://docs.dexkit.com/defi-products/dexgenerator/thirdweb-contracts",
+    "types": {
+      "token": "/token",
+      "token_drop": "/token-drop",
+      "nft_collection": "/nft-collection",
+      "nft_drop": "/nft-drop",
+      "edition": "/edition",
+      "edition_drop": "/edition-drop",
+      "multiwrap": "/multiwrap",
+      "pack": "/pack",
+      "split": "/split",
+      "vote": "/vote",
+      "stake_erc20": "/stakeerc20",
+      "stake_erc721": "/stakeerc721",
+      "stake_erc1155": "/stakeerc1155",
+      "airdrop_erc20": "/airdroperc20",
+      "airdrop_erc20_claimable": "/airdroperc20claimable",
+      "airdrop_erc721": "/airdroperc721",
+      "airdrop_erc1155": "/airdroperc1155"
     }
   }
 } 

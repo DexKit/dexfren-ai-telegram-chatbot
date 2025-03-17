@@ -108,8 +108,8 @@ def dashboard():
                 stats['total_videos'] = total_videos
                 stats['categories'].update(video_categories)
                 
-                print(f"Videos encontrados: {total_videos}")
-                print(f"Categorías encontradas: {video_categories}")
+                print(f"Videos found: {total_videos}")
+                print(f"Categories found: {video_categories}")
         except Exception as e:
             print(f"Error loading videos: {e}")
             import traceback

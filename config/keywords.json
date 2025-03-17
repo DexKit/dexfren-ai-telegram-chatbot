@@ -1,0 +1,53 @@
+{
+  "dapp": {
+    "keywords": ["dapp", "create", "make", "build", "app", "application", "develop", "platform", "website", "web3", "decentralized"],
+    "priority_topics": ["dapp-creation", "app-monetization", "templates", "deployment"],
+    "related_categories": ["platform", "defi", "deployment"]
+  },
+  "nft": {
+    "keywords": ["nft", "token", "collectible", "marketplace", "mint", "collection", "digital asset", "non-fungible", "art"],
+    "priority_topics": ["nft-creation", "marketplace-creation", "minting", "collection-management"],
+    "related_categories": ["nft", "marketplace", "token"]
+  },
+  "swap": {
+    "keywords": ["swap", "exchange", "dex", "trading", "liquidity", "pool", "amm", "trade", "exchange rate"],
+    "priority_topics": ["swap-creation", "dex-creation", "liquidity-management"],
+    "related_categories": ["defi", "exchange", "token"]
+  },
+  "dapp_builder": {
+    "keywords": ["dapp", "create", "builder", "build", "app", "develop", "application", "template", "wizard", "no-code", "low-code"],
+    "video_keywords": ["tutorial", "video", "guide", "how to", "learn", "demo", "showcase", "walkthrough", "instructions"]
+  },
+  "token_creation": {
+    "keywords": ["token", "create token", "generation", "generate token", "contract", "tokenomics", "supply", "erc20", "mint token", "deploy token"],
+    "video_keywords": ["token tutorial", "generate token guide", "token creation video", "video token", "token guide", "demo token", "token standard"]
+  },
+  "video_tutorials": {
+    "keywords": ["video", "tutorial", "guide", "how to", "learn", "demo", "showcase", "walkthrough", "instructions", "course", "lesson", "example"]
+  },
+  "wallet": {
+    "keywords": ["wallet", "connect", "metamask", "web3", "crypto wallet", "connection", "sign", "transaction", "approve"],
+    "priority_topics": ["wallet-connection", "transaction-approval", "security"],
+    "related_categories": ["security", "basics"]
+  },
+  "deployment": {
+    "keywords": ["deploy", "publish", "launch", "go live", "domain", "custom domain", "hosting", "vercel", "dns"],
+    "priority_topics": ["domain-setup", "deployment", "configuration"],
+    "related_categories": ["dapp", "technical"]
+  },
+  "technical_support": {
+    "keywords": ["error", "problem", "issue", "help", "support", "not working", "fix", "troubleshoot", "debug"],
+    "priority_topics": ["common-issues", "troubleshooting", "setup-problems"],
+    "related_categories": ["support"]
+  },
+  "networks": {
+    "keywords": ["network", "blockchain", "ethereum", "polygon", "binance", "bsc", "avalanche", "fantom", "arbitrum", "optimism", "base", "chain", "gas", "fees"],
+    "priority_topics": ["network-selection", "gas-optimization", "cross-chain"],
+    "related_categories": ["technical", "basics"]
+  },
+  "monetization": {
+    "keywords": ["monetize", "revenue", "income", "sell", "subscription", "commission", "fee", "profit"],
+    "priority_topics": ["revenue-models", "subscription-setup", "commission-structure"],
+    "related_categories": ["business", "economics", "pricing"]
+  }
+} 

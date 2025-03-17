@@ -28,7 +28,6 @@
     }
 }
 
-/* Responsive adjustments */
 @screen lg {
     .container {
         @apply px-8;
